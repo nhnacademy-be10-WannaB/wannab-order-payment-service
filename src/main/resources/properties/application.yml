@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: order-payment-service
+  config:
+    import: optional:classpath:properties/env.properties
+
+  data:
+    redis:
+      host: ${redis.host}
+      port: ${redis.port}
+      password: ${redis.password}
+      database: ${redis.database}
+  rabbitmq:
+    host: ${rabbitmq.host}
+    port: ${rabbitmq.port}
+    username: ${rabbitmq.username}
+    password: ${rabbitmq.password}
+
+tosspayments:
+  client-key: ${toss.client-key}
+  secret-key: ${toss.secret-key}
