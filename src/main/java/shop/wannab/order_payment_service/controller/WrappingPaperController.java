@@ -4,7 +4,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,5 +31,16 @@ public class WrappingPaperController {
         WrappingPaperResponse response = new WrappingPaperResponse(wrappingPaper.getId(), wrappingPaper.getName(), wrappingPaper.getPrice());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    //포장지 수정
+    @PutMapping("{wp-id}")
+    public ResponseEntity<WrappingPaperResponse> updateWrappingPaper(@PathVariable("wp-id") Long id,
+                                                                     @RequestBody @Valid WrappingPaperRequest request){
+        WrappingPaper wrappingPaper = wrappingPaperService.updateWrappingPaper(id, request);
+
+        //업데이트된 포장지 반환
+        WrappingPaperResponse response = new WrappingPaperResponse(wrappingPaper.getId(), wrappingPaper.getName(), wrappingPaper.getPrice());
+        return ResponseEntity.ok(response);
     }
 }

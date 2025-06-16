@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.WrappingPaper;
 import shop.wannab.order_payment_service.entity.dto.WrappingPaperRequest;
 import shop.wannab.order_payment_service.exception.WrappingPaperAlreadyExistsException;
+import shop.wannab.order_payment_service.exception.WrappingPaperNotFoundException;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.WrappingPaperService;
 
@@ -28,6 +29,23 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
         }
 
         WrappingPaper wrappingPaper = new WrappingPaper();
+        wrappingPaper.setName(request.getName());
+        wrappingPaper.setPrice(request.getPrice());
+
+        return wrappingPaperRepository.save(wrappingPaper);
+    }
+
+    @Transactional
+    @Override
+    public WrappingPaper updateWrappingPaper(Long wpId, WrappingPaperRequest request) {
+
+        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
+
+        //이름 중복검사
+        if(wrappingPaperRepository.existsByName(request.getName())){
+            throw new WrappingPaperAlreadyExistsException(request.getName());
+        }
+
         wrappingPaper.setName(request.getName());
         wrappingPaper.setPrice(request.getPrice());
 

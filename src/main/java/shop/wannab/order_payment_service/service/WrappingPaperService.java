@@ -7,4 +7,7 @@ public interface WrappingPaperService {
 
     //포장지 생성
     WrappingPaper creatWrappingPaper(WrappingPaperRequest request);
+
+    //포장지 수정
+    WrappingPaper updateWrappingPaper(Long wpId, WrappingPaperRequest request);
 }
