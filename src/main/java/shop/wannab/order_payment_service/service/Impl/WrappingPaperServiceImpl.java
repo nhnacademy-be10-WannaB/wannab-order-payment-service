@@ -1,10 +1,13 @@
 package shop.wannab.order_payment_service.service.Impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.WrappingPaper;
 import shop.wannab.order_payment_service.entity.dto.WrappingPaperRequest;
+import shop.wannab.order_payment_service.entity.dto.WrappingPaperResponse;
 import shop.wannab.order_payment_service.exception.WrappingPaperAlreadyExistsException;
 import shop.wannab.order_payment_service.exception.WrappingPaperNotFoundException;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
@@ -60,5 +63,17 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
         WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
 
         wrappingPaperRepository.delete(wrappingPaper);
+    }
+
+    //포장지목록 전체조회
+    @Transactional(readOnly = true)
+    @Override
+    public List<WrappingPaperResponse> getWrappingPaperList() {
+
+
+        //DTO반환을 위해 매핑처리
+        return wrappingPaperRepository.findAll().stream()
+                .map(wp -> new WrappingPaperResponse(wp.getId(), wp.getName(), wp.getPrice()))
+                .collect(Collectors.toList());
     }
 }
