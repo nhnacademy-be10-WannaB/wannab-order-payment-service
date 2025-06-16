@@ -1,20 +1,21 @@
 package shop.wannab.order_payment_service.service;
 
+import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import shop.wannab.order_payment_service.entity.CartItem;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
 
-    public static final long CART_DUMMY_KEY = -1;
-    public static final long CART_DUMMY_VAL = -1;
+    private static final long CART_DUMMY_KEY = -1;
+    private static final long CART_DUMMY_VAL = -1;
+    private static final int GUEST_CART_TTL = 24; //hour
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final String cartKeyPrefix = "cart:";
@@ -46,8 +47,24 @@ public class CartService {
         redisTemplate.opsForHash().delete(cartKey, bookId);
     }
 
-    public void createCart(String userIdentifier) {
-        String cartKey = cartKeyPrefix + userIdentifier;
+    public Cookie createCart(Long userIdentifier) {
+        String cartKey = null;
+        String identifier = null;
+
+        if (Objects.isNull(userIdentifier)) {
+            identifier = "guest:" + UUID.randomUUID().toString().substring(0, 7);
+            Cookie cookie = new Cookie("X-User-Id", identifier);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(60 * 60 * GUEST_CART_TTL);
+            return cookie;
+        }
+        cartKey = cartKeyPrefix + userIdentifier;
         redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
+
+        if (cartKey.startsWith("cart:guest:")) {
+        redisTemplate.expire(cartKey, Duration.ofHours(GUEST_CART_TTL));
+        }
+        return null;
     }
 }
