@@ -2,17 +2,15 @@ package shop.wannab.order_payment_service.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.entity.CartItem;
+import shop.wannab.order_payment_service.service.CartService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@RestController("/api")
+@RestController("/api/cart")
 @RequiredArgsConstructor
 public class CartController {
 
@@ -20,25 +18,35 @@ public class CartController {
     public static final long CART_DUMMY_VAL = -1;
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CartService cartService;
 
-    @PostMapping("/cart")
+    @PostMapping
     public void createCart(@RequestBody String userIdentifier) {
-        String key = "cart:" + userIdentifier;
-        //비회원일 경우 ttl 걸어줘야함
-        redisTemplate.opsForHash().put(key, CART_DUMMY_KEY, CART_DUMMY_VAL);
-    }
-
-    @GetMapping("/cart")
-    public List<CartItem> getCartItems(@RequestBody String userIdentifier) {//String userIdentifier
         String cartKey = "cart:" + userIdentifier;
-        Map<Long, Integer> cartBooks = redisTemplate.<Long, Integer>opsForHash().entries(cartKey); //key: bookId, value: quantity
-
-        List<CartItem> cartItems = new ArrayList<>();
-        for (Map.Entry<Long, Integer> entry : cartBooks.entrySet()) {
-            CartItem item = new CartItem(entry.getKey(), entry.getValue());
-            cartItems.add(item);
-        }
-        return cartItems;
+        //비회원일 경우 ttl 걸어줘야함
+        redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
     }
+
+    @GetMapping
+    public List<CartItem> getCartItems(@RequestHeader("X-User-Id") long userId) {//String userIdentifier
+        String cartKey = "cart:" + userId;
+        return cartService.getCartItems(cartKey);
+    }
+
+    @PostMapping("/books")
+    public List<CartItem> addProductToCart(@RequestHeader("X-User-Id") Long userId, @RequestParam long bookId) {
+        String cartKey = "cart:" + userId;
+        redisTemplate.opsForHash().increment(cartKey, bookId, 1);
+        return cartService.getCartItems(cartKey);
+    }
+
+    @PutMapping("/books/{bookId}")
+    public List<CartItem> updateCartItemQuantity(@RequestHeader("X-User-Id") Long userId, @PathVariable long bookId, @RequestParam int quantity) {
+        String cartKey = "cart:" + userId;
+        redisTemplate.opsForHash().put(cartKey, bookId, quantity);
+        return cartService.getCartItems(cartKey);
+    }
+
+
 
 }
