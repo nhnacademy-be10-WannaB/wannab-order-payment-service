@@ -49,22 +49,27 @@ public class CartService {
 
     public Cookie createCart(Long userIdentifier) {
         String cartKey = null;
-        String identifier = null;
 
         if (Objects.isNull(userIdentifier)) {
-            identifier = "guest:" + UUID.randomUUID().toString().substring(0, 7);
-            Cookie cookie = new Cookie("X-User-Id", identifier);
+            Random random = new Random();
+            int guestId = -random.nextInt(9000000) - 1000000; // 비회원의 경우 음수 식별자
+             String guest = "guest:" + guestId;
+            cartKey = cartKeyPrefix + guest; //cart:guest:-142435
+
+            redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
+            redisTemplate.expire(cartKey, Duration.ofHours(GUEST_CART_TTL));
+
+            Cookie cookie = new Cookie("X-User-Id", String.valueOf(guestId));
             cookie.setHttpOnly(true);
             cookie.setPath("/");
             cookie.setMaxAge(60 * 60 * GUEST_CART_TTL);
             return cookie;
         }
+
         cartKey = cartKeyPrefix + userIdentifier;
         redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
 
-        if (cartKey.startsWith("cart:guest:")) {
-        redisTemplate.expire(cartKey, Duration.ofHours(GUEST_CART_TTL));
-        }
         return null;
     }
+
 }
