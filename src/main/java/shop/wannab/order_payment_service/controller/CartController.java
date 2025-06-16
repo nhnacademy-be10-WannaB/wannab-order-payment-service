@@ -6,9 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.entity.CartItem;
 import shop.wannab.order_payment_service.service.CartService;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @RestController("/api/cart")
 @RequiredArgsConstructor
@@ -29,24 +27,26 @@ public class CartController {
 
     @GetMapping
     public List<CartItem> getCartItems(@RequestHeader("X-User-Id") long userId) {//String userIdentifier
-        String cartKey = "cart:" + userId;
-        return cartService.getCartItems(cartKey);
+        return cartService.getCartItems(userId);
     }
 
     @PostMapping("/books")
     public List<CartItem> addProductToCart(@RequestHeader("X-User-Id") Long userId, @RequestParam long bookId) {
-        String cartKey = "cart:" + userId;
-        redisTemplate.opsForHash().increment(cartKey, bookId, 1);
-        return cartService.getCartItems(cartKey);
+        cartService.addCartItem(userId, bookId);
+        return cartService.getCartItems(userId);
     }
 
-    @PutMapping("/books/{bookId}")
-    public List<CartItem> updateCartItemQuantity(@RequestHeader("X-User-Id") Long userId, @PathVariable long bookId, @RequestParam int quantity) {
-        String cartKey = "cart:" + userId;
-        redisTemplate.opsForHash().put(cartKey, bookId, quantity);
-        return cartService.getCartItems(cartKey);
+    @PutMapping("/books/{book-id}")
+    public List<CartItem> updateCartItemQuantity(@RequestHeader("X-User-Id") Long userId, @PathVariable(name = "book-id") long bookId, @RequestParam int quantity) {
+        cartService.updateItemQuantity(userId, bookId, quantity);
+        return cartService.getCartItems(userId);
     }
 
+    @DeleteMapping("/books/{book-id}")
+    public List<CartItem> removeProductFromCart(@RequestHeader("X-User-Id") Long userId, @PathVariable(name = "book-id") long bookId) {
+        cartService.removeProductFromCart(userId, bookId);
+        return cartService.getCartItems(userId);
+    }
 
 
 }

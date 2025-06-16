@@ -14,9 +14,10 @@ import java.util.Map;
 public class CartService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final String cartKeyPrefix = "cart:";
 
-
-    public List<CartItem> getCartItems(String cartKey) {
+    public List<CartItem> getCartItems(long userIdentifier) {
+        String cartKey = cartKeyPrefix + userIdentifier;
         Map<Long, Integer> cartBooks = redisTemplate.<Long, Integer>opsForHash().entries(cartKey); //key: bookId, value: quantity
 
         List<CartItem> cartItems = new ArrayList<>();
@@ -25,5 +26,20 @@ public class CartService {
             cartItems.add(item);
         }
         return cartItems;
+    }
+
+    public void addCartItem(Long userIdentifier, long bookId) {
+        String cartKey = cartKeyPrefix + userIdentifier;
+        redisTemplate.opsForHash().increment(cartKey, bookId, 1);
+    }
+
+    public void updateItemQuantity(Long userIdentifier, long bookId, int quantity) {
+        String cartKey = cartKeyPrefix + userIdentifier;
+        redisTemplate.opsForHash().put(cartKey, bookId, quantity);
+    }
+
+    public void removeProductFromCart(Long userIdentifier, long bookId) {
+        String cartKey = cartKeyPrefix + userIdentifier;
+        redisTemplate.opsForHash().delete(cartKey, bookId);
     }
 }
