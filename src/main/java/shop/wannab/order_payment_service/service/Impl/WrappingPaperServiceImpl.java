@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.WrappingPaper;
 import shop.wannab.order_payment_service.entity.dto.WrappingPaperRequest;
+import shop.wannab.order_payment_service.exception.WrappingPaperAlreadyExistsException;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.WrappingPaperService;
 
@@ -20,6 +21,11 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     @Transactional
     @Override
     public WrappingPaper creatWrappingPaper(WrappingPaperRequest request) {
+
+        //이름 중복검사
+        if(wrappingPaperRepository.existsByName(request.getName())){
+            throw new WrappingPaperAlreadyExistsException(request.getName());
+        }
 
         WrappingPaper wrappingPaper = new WrappingPaper();
         wrappingPaper.setName(request.getName());
