@@ -1,7 +1,6 @@
 package shop.wannab.order_payment_service.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.entity.CartItem;
 import shop.wannab.order_payment_service.service.CartService;
@@ -12,21 +11,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CartController {
 
-    public static final long CART_DUMMY_KEY = -1;
-    public static final long CART_DUMMY_VAL = -1;
-
-    private final RedisTemplate<String, Object> redisTemplate;
     private final CartService cartService;
 
     @PostMapping
     public void createCart(@RequestBody String userIdentifier) {
-        String cartKey = "cart:" + userIdentifier;
         //비회원일 경우 ttl 걸어줘야함
-        redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
+        cartService.createCart(userIdentifier);
     }
 
     @GetMapping
-    public List<CartItem> getCartItems(@RequestHeader("X-User-Id") long userId) {//String userIdentifier
+    public List<CartItem> getCartItems(@RequestHeader("X-User-Id") long userId) {
         return cartService.getCartItems(userId);
     }
 

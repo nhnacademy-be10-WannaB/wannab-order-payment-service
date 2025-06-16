@@ -13,6 +13,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CartService {
 
+    public static final long CART_DUMMY_KEY = -1;
+    public static final long CART_DUMMY_VAL = -1;
+
     private final RedisTemplate<String, Object> redisTemplate;
     private final String cartKeyPrefix = "cart:";
 
@@ -41,5 +44,10 @@ public class CartService {
     public void removeProductFromCart(Long userIdentifier, long bookId) {
         String cartKey = cartKeyPrefix + userIdentifier;
         redisTemplate.opsForHash().delete(cartKey, bookId);
+    }
+
+    public void createCart(String userIdentifier) {
+        String cartKey = cartKeyPrefix + userIdentifier;
+        redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
     }
 }
