@@ -26,6 +26,6 @@ public class WrappingPaper {
     private String name;
 
     @Setter
-    @Column(name = "wp_name", nullable = false)
+    @Column(name = "wp_price", nullable = false)
     private int price;
 }

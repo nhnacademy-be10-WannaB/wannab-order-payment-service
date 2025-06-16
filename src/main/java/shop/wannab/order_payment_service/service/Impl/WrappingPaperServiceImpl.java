@@ -13,7 +13,7 @@ import shop.wannab.order_payment_service.service.WrappingPaperService;
 @RequiredArgsConstructor
 public class WrappingPaperServiceImpl implements WrappingPaperService {
 
-    private WrappingPaperRepository wrappingPaperRepository;
+    private final WrappingPaperRepository wrappingPaperRepository;
 
 
     //포장지 생성
