@@ -35,6 +35,7 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
         return wrappingPaperRepository.save(wrappingPaper);
     }
 
+    //포장지 수정
     @Transactional
     @Override
     public WrappingPaper updateWrappingPaper(Long wpId, WrappingPaperRequest request) {
@@ -50,5 +51,14 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
         wrappingPaper.setPrice(request.getPrice());
 
         return wrappingPaperRepository.save(wrappingPaper);
+    }
+
+    //포장지 삭제
+    @Transactional
+    @Override
+    public void deleteWrappingPaper(Long wpId) {
+        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
+
+        wrappingPaperRepository.delete(wrappingPaper);
     }
 }

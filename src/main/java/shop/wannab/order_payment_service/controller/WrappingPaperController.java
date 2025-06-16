@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -42,5 +43,12 @@ public class WrappingPaperController {
         //업데이트된 포장지 반환
         WrappingPaperResponse response = new WrappingPaperResponse(wrappingPaper.getId(), wrappingPaper.getName(), wrappingPaper.getPrice());
         return ResponseEntity.ok(response);
+    }
+
+    //포장지 삭제
+    @DeleteMapping("{wp-id}")
+    public ResponseEntity<Void> deleteWrappingPaper(@PathVariable("wp-id") Long id){
+        wrappingPaperService.deleteWrappingPaper(id);
+        return ResponseEntity.ok().build();
     }
 }
