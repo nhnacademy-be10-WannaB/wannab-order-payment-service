@@ -42,13 +42,16 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
         WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
 
         //이름 중복검사
-        if(wrappingPaperRepository.existsByName(request.getName())){
-            throw new WrappingPaperAlreadyExistsException(request.getName());
-        }
+        wrappingPaperRepository.findByName(request.getName()).ifPresent(wp -> {
+            if(!wp.getId().equals(wpId)){
+                throw new WrappingPaperAlreadyExistsException(request.getName());
+            }
+        });
+
 
         wrappingPaper.setName(request.getName());
         wrappingPaper.setPrice(request.getPrice());
 
-        return wrappingPaperRepository.save(wrappingPaper);
+        return wrappingPaper;
     }
 }
