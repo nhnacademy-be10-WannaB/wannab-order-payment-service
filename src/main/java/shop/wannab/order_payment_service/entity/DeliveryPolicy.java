@@ -39,7 +39,7 @@ public class DeliveryPolicy {
 
 
     //배송정책 계산로직 (우선 배송정책쪽에 넣었는데 나중에 바꿀필요가 있으면 수정필요)
-    public boolean isApplicable(int orderPrice) {
-        return orderPrice >= this.minPrice;
+    public boolean isApplicable(int totalBookPrice) {
+        return totalBookPrice >= this.minPrice;
     }
 }

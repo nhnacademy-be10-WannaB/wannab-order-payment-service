@@ -85,10 +85,10 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
 
     //정책 계산 로직 -> 주문한 금액을 받고 그 금액에 알맞는 배송 정책을 반환
     @Override
-    public DeliveryPolicy findApplicablePolicy(int orderPrice) {
+    public DeliveryPolicy findApplicablePolicy(int totalBookPrice) {
         List<DeliveryPolicy> list = deliveryPolicyRepository.findAll();
 
-        return list.stream().filter(dp -> dp.isApplicable(orderPrice))
+        return list.stream().filter(dp -> dp.isApplicable(totalBookPrice))
                 .max(Comparator.comparingInt(DeliveryPolicy::getMinPrice))
                 .orElseGet(this::getDefaultPolicy);
     }
