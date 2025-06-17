@@ -2,62 +2,38 @@ package shop.wannab.order_payment_service.service;
 
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import shop.wannab.order_payment_service.entity.CartItem;
-
-import java.time.Duration;
+import shop.wannab.order_payment_service.repository.CartRepository;
+import static shop.wannab.order_payment_service.constants.Constants.GUEST_CART_TTL;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
 
-    private static final long CART_DUMMY_KEY = -1;
-    private static final long CART_DUMMY_VAL = -1;
-    private static final int GUEST_CART_TTL = 24; //hour
-
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final String cartKeyPrefix = "cart:";
+    private final CartRepository cartRepository;
 
     public List<CartItem> getCartItems(long userIdentifier) {
-        String cartKey = cartKeyPrefix + userIdentifier;
-        Map<Long, Integer> cartBooks = redisTemplate.<Long, Integer>opsForHash().entries(cartKey); //key: bookId, value: quantity
-
-        List<CartItem> cartItems = new ArrayList<>();
-        for (Map.Entry<Long, Integer> entry : cartBooks.entrySet()) {
-            CartItem item = new CartItem(entry.getKey(), entry.getValue());
-            cartItems.add(item);
-        }
-        return cartItems;
+        return cartRepository.getCartItems(userIdentifier);
     }
 
     public void addCartItem(Long userIdentifier, long bookId) {
-        String cartKey = cartKeyPrefix + userIdentifier;
-        redisTemplate.opsForHash().increment(cartKey, bookId, 1);
+        cartRepository.addItemToCart(userIdentifier, bookId);
     }
 
     public void updateItemQuantity(Long userIdentifier, long bookId, int quantity) {
-        String cartKey = cartKeyPrefix + userIdentifier;
-        redisTemplate.opsForHash().put(cartKey, bookId, quantity);
+        cartRepository.updateItemQuantity(userIdentifier, bookId, quantity);
     }
 
     public void removeProductFromCart(Long userIdentifier, long bookId) {
-        String cartKey = cartKeyPrefix + userIdentifier;
-        redisTemplate.opsForHash().delete(cartKey, bookId);
+        cartRepository.removeItemFromCart(userIdentifier, bookId);
     }
 
     public Cookie createCart(Long userIdentifier) {
-        String cartKey = null;
-
         if (Objects.isNull(userIdentifier)) {
-            Random random = new Random();
-            int guestId = -random.nextInt(9000000) - 1000000; // 비회원의 경우 음수 식별자
-             String guest = "guest:" + guestId;
-            cartKey = cartKeyPrefix + guest; //cart:guest:-142435
-
-            redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
-            redisTemplate.expire(cartKey, Duration.ofHours(GUEST_CART_TTL));
+            long guestId = createGuestId();
+            cartRepository.createCart(guestId);
 
             Cookie cookie = new Cookie("X-User-Id", String.valueOf(guestId));
             cookie.setHttpOnly(true);
@@ -65,11 +41,13 @@ public class CartService {
             cookie.setMaxAge(60 * 60 * GUEST_CART_TTL);
             return cookie;
         }
-
-        cartKey = cartKeyPrefix + userIdentifier;
-        redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
-
+        cartRepository.createCart(userIdentifier);
         return null;
+    }
+
+    private long createGuestId() {
+        Random random = new Random();
+        return -random.nextLong(9000000) - 1000000;
     }
 
 }
