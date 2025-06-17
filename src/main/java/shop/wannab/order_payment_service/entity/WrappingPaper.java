@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,10 +23,12 @@ public class WrappingPaper {
     private Long id;
 
     @Setter
-    @Column(name = "wp_name", nullable = false)
+    @NotNull
+    @Column(name = "wp_name")
     private String name;
 
     @Setter
+    @NotNull
     @Column(name = "wp_price", nullable = false)
     private int price;
 }
