@@ -1,0 +1,77 @@
+package shop.wannab.order_payment_service.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.time.ZonedDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import shop.wannab.order_payment_service.hardcoding.Address;
+import shop.wannab.order_payment_service.hardcoding.User;
+
+
+@Entity
+@Setter
+@Getter
+@NoArgsConstructor
+@Table(name = "orders")
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_id")
+    private Long id;
+
+    @Column(name = "order_at")
+    private ZonedDateTime orderAt;
+
+    @Column(name = "delivery_at")
+    private ZonedDateTime deliveryAt;
+
+    @Column(name = "delivery_want")
+    private ZonedDateTime deliveryWant;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_status")
+    private OrderStatus orderStatus;
+
+    @Column(name = "total_book_price")
+    private int totalBookPrice;
+
+    @Column(name = "total_discount")
+    private int totalDiscount;
+
+    @Column(name = "delivery_fee")
+    private int deliveryFee;
+
+    @Column(name = "total_wrapping_price")
+    private int totalWrappingPrice;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "address_id", nullable = true)
+    private Address address;
+
+
+
+
+    //총 결제금액 계산
+    public int getTotalPrice() {
+        return totalBookPrice
+                + totalWrappingPrice
+                + deliveryFee
+                - totalDiscount;
+    }
+}
