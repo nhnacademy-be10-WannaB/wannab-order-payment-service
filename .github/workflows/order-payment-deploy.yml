@@ -1,0 +1,51 @@
+name: Build and Deploy Docker Image
+
+on:
+  pull_request:
+    branches:
+      - release
+    types:
+      - closed
+
+jobs:
+  build-and-deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build & Push Docker Image
+        run: |
+          IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/order-payment-service
+          docker build -t $IMAGE:${{ github.sha }} .
+          docker tag $IMAGE:${{ github.sha }} $IMAGE:latest
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: 8822
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            chmod +x /home/be10/be10-team5/script/order-payment-deploy.sh
+            /home/be10/be10-team5/script/order-payment-deploy.sh ${{ github.sha }}
