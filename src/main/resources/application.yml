@@ -1,8 +1,12 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: order-payment-service
   config:
     import: optional:classpath:properties/env.properties
+
 
   data:
     redis:
@@ -20,3 +24,7 @@ spring:
 tosspayments:
   client-key: ${TOSS_CLIENT_KEY}
   secret-key: ${TOSS_SECRET_KEY}
+
+book:
+  api:
+    url: http://localhost:8081
