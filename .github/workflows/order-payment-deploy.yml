@@ -48,4 +48,4 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             chmod +x /home/be10/be10-team5/script/order-payment-deploy.sh
-            /home/be10/be10-team5/script/order-payment-deploy.sh
+            /home/be10/be10-team5/script/order-payment-deploy.sh ${{ github.sha }}
