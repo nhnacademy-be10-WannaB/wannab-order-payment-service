@@ -39,7 +39,7 @@ jobs:
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
 
-      - name: Deploy on server
+      - name: Deploy on server (Rolling peer1)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -47,5 +47,16 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            chmod +x /home/be10/be10-team5/script/order-payment-deploy.sh
-            /home/be10/be10-team5/script/order-payment-deploy.sh ${{ github.sha }}
+            chmod +x /home/be10/be10-team5/script/deploy-order-payment-service.sh
+            /home/be10/be10-team5/script/deploy-order-payment-service.sh peer1 ${{ github.sha }}
+      
+      - name: Deploy on server (Rolling peer2)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: 8822
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            chmod +x /home/be10/be10-team5/script/deploy-order-payment-service.sh
+            /home/be10/be10-team5/script/deploy-order-payment-service.sh peer2 ${{ github.sha }}
