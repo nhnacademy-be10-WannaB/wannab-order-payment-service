@@ -1,24 +1,15 @@
 package shop.wannab.order_payment_service.exception;
 
-import shop.wannab.order_payment_service.entity.dto.OrderBookInfo;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import shop.wannab.order_payment_service.entity.dto.OrderItemValidationError;
 
 import java.util.List;
 
+@Getter
+@RequiredArgsConstructor
 public class UnavailableOrderBooksException extends RuntimeException {
-    private final List<OrderBookInfo> invalidBooks;
-    private final Long userId;
-    public UnavailableOrderBooksException(Long userId, List<OrderBookInfo> invalidBooks) {
-        //super("One or more books have invalid quantity (<= 0)");
-        this.invalidBooks = invalidBooks;
-        this.userId = userId;
-    }
+    private final List<OrderItemValidationError> errors;
 
-    public List<OrderBookInfo> getInvalidBooks() {
-        return invalidBooks;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
 }
 
