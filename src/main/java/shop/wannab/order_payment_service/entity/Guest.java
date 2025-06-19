@@ -26,22 +26,27 @@ public class Guest {
     private Long id;
 
     @Setter
+    @NotNull
     @Column(name = "guest_name")
     private String name;
 
     @Setter
+    @NotNull
     @Column(name = "guest_email")
     private String email;
 
     @Setter
+    @NotNull
     @Column(name = "guest_phone")
     private String phone;
 
     @Setter
+    @NotNull
     @Column(name = "guest_password")
     private String password;
 
     @Setter
+    @NotNull
     @Column(name = "guest_address")
     private String address;
 

@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import shop.wannab.order_payment_service.hardcoding.Book;
 
 
 @Entity
@@ -43,9 +44,13 @@ public class OrderBook {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @NotNull
-    @Column(name = "book_id")
-    private Long bookId;
+    //외부 api
+//    @NotNull
+//    @Column(name = "book_id")
+//    private Long bookId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wp_id")

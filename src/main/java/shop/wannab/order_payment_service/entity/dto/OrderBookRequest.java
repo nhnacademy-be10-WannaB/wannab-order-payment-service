@@ -14,4 +14,8 @@ public class OrderBookRequest {
     private int quantity; //수량
 
     private Long selectedWrappingId; //포장지 선택 (없으면 null)
+
+
+    //회원
+    private Long selectedcouponId; //쿠폰선택 (없으면 null)
 }

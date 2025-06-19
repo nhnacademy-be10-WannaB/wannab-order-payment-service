@@ -16,5 +16,8 @@ public class OrderBookResponse {
     private int quantity;
     private int bookPrice;
     private List<WrappingPaperResponse> wrappingPapers;
-    //쿠폰 list?
+
+
+    //회원
+    //쿠폰 list
 }

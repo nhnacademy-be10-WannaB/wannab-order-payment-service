@@ -16,31 +16,39 @@ import lombok.Data;
 
 //비회원 주문서에서 입력받을 데이터 DTO
 @Data
-public class GuestOrderRequest {
+public class OrderRequest {
 
+    //공통
     @NotEmpty
     private List<@Valid OrderBookRequest> bookList;
 
-    @NotBlank(message = "이름을 입력해주세요")
+    @Future(message = "희망 배송일은 오늘 이후여야합니다")
+    private ZonedDateTime deliveryWant; //희망배송날짜
+
+
+
+
+    //회원
+    private Long couponId; //사용할 쿠폰
+    private int usedPoint; //사용할 포인트
+    private Long addressId; //배송할 주소
+
+
+    //비회원
     private String name;
 
-    @NotBlank(message = "이메일을 입력해주세요")
     @Email(message = "올바른 이메일 형식이 아닙니다")
     private String email;
 
-    @NotBlank(message = "휴대폰 번호를 입력해주세요")
     @Pattern(regexp = "^010-\\d{4}-\\d{4}$", message = "올바른 번호형식이 아닙니다 ex: xxx-xxxx-xxxx")
     private String phone;
 
-    @NotBlank(message = "비밀번호를 입력해주세요")
     @Pattern(regexp = "^\\d{4,6}$", message = "비밀번호는 숫자 4~6자 사이여야 합니다")
     private String password;
 
-    @NotBlank(message = "주소를 입력해주세요")
     private String address;
 
-    @Future(message = "희망 배송일은 오늘 이후여야합니다")
-    private ZonedDateTime deliveryWant; //희망배송날짜
+
 
 
 
