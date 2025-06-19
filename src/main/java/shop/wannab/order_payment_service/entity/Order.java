@@ -11,13 +11,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.time.ZonedDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import shop.wannab.order_payment_service.hardcoding.Address;
-import shop.wannab.order_payment_service.hardcoding.User;
-
 
 @Entity
 @Setter
@@ -56,13 +54,14 @@ public class Order {
     @Column(name = "total_wrapping_price")
     private int totalWrappingPrice;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "user_id", nullable = true)
-    private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "address_id", nullable = true)
-    private Address address;
+    //외부 API
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "adress_id")
+    private Long addressId;
 
 
 

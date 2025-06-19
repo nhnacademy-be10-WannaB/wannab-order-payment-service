@@ -4,7 +4,8 @@ import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import shop.wannab.order_payment_service.hardcoding.Book;
+import shop.wannab.order_payment_service.client.BookFeignClient;
+import shop.wannab.order_payment_service.entity.dto.BookDto;
 import shop.wannab.order_payment_service.entity.DeliveryPolicy;
 import shop.wannab.order_payment_service.entity.Guest;
 import shop.wannab.order_payment_service.entity.Order;
@@ -14,7 +15,6 @@ import shop.wannab.order_payment_service.entity.WrappingPaper;
 import shop.wannab.order_payment_service.entity.dto.GuestOrderRequest;
 import shop.wannab.order_payment_service.entity.dto.OrderBookRequest;
 import shop.wannab.order_payment_service.entity.dto.OrderResponse;
-import shop.wannab.order_payment_service.hardcoding.BookRepository;
 import shop.wannab.order_payment_service.repository.GuestRepository;
 import shop.wannab.order_payment_service.repository.OrderBookRepository;
 import shop.wannab.order_payment_service.repository.OrderReopsitory;
@@ -32,8 +32,12 @@ public class GuestOrderServiceImpl implements GuestOrderService {
     private final OrderBookRepository orderBookRepository;
     private final DeliveryPolicyService deliveryPolicyService;
 
+    private final EmailService emailService;
+
     //TODO: API 연동시 수정필요
-    private final BookRepository bookRepository;
+    private final BookFeignClient bookFeignClient;
+
+
 
 
 
@@ -55,7 +59,8 @@ public class GuestOrderServiceImpl implements GuestOrderService {
 
         //장바구니에서 선택한 도서에 대한 로직처리
         for(OrderBookRequest req : request.getBookList()){
-            Book book = bookRepository.findById(req.getBookId()).orElseThrow(()-> new IllegalArgumentException("도서를 찾을 수 없습니다."));
+            //Book book = bookRepository.findById(req.getBookId()).orElseThrow(()-> new IllegalArgumentException("도서를 찾을 수 없습니다."));
+            BookDto book = bookFeignClient.getBook(req.getBookId());
 
             WrappingPaper wp = null;
             int wpPrice = 0;
@@ -66,7 +71,7 @@ public class GuestOrderServiceImpl implements GuestOrderService {
 
             OrderBook orderBook = new OrderBook();
             orderBook.setOrder(guestOrder);
-            orderBook.setBook(book);
+            orderBook.setBookId(book.getId());
             orderBook.setBookPrice(book.getPrice());
             orderBook.setQuantity(req.getQuantity());
             orderBook.setWrappingPaper(wp);
@@ -98,6 +103,21 @@ public class GuestOrderServiceImpl implements GuestOrderService {
         guest.setOrder(guestOrder);
 
         guestRepository.save(guest);
+
+
+        //이메일 발송시스템
+        String emailText = String.format("""
+            %s님, 주문이 완료되었습니다.
+            
+            ▷ 주문번호: %d
+            ▷ 결제금액: %,d원
+            ▷ 배송주소: %s
+            ▷ 배송희망일: %s
+            
+            감사합니다.
+        """, guest.getName(), guestOrder.getId(), guestOrder.getTotalPrice(), guest.getAddress(), guestOrder.getDeliveryWant().toLocalDate());
+
+        emailService.sendOrderEmail(guest.getEmail(), "[WannaB] 비회원 주문확인서", emailText);
 
         return new OrderResponse(guestOrder.getId(), guestOrder.getOrderAt(), guestOrder.getTotalPrice());
     }

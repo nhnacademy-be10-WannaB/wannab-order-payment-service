@@ -10,10 +10,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import shop.wannab.order_payment_service.hardcoding.Book;
 
 
 @Entity
@@ -38,13 +38,14 @@ public class OrderBook {
     private int wrappingPrice;
 
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "book_id", nullable = false)
-    private Book book;
+    @NotNull
+    @Column(name = "book_id")
+    private Long bookId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wp_id")

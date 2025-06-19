@@ -97,6 +97,13 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+
+		<!--이메일전송-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>
