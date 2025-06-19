@@ -47,8 +47,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            chmod +x /home/be10/be10-team5/script/deploy-order-payment-service.sh
-            /home/be10/be10-team5/script/deploy-order-payment-service.sh v1 ${{ github.sha }}
+            chmod +x /home/be10/be10-team5/script/order-payment-service-deploy.sh
+            /home/be10/be10-team5/script/order-payment-service-deploy.sh v1 ${{ github.sha }}
       
       - name: Deploy on server (Rolling v2)
         uses: appleboy/ssh-action@master
@@ -58,6 +58,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            chmod +x /home/be10/be10-team5/script/deploy-order-payment-service.sh
-            /home/be10/be10-team5/script/deploy-order-payment-service.sh v2 ${{ github.sha }}
+            chmod +x /home/be10/be10-team5/script/order-payment-service-deploy.sh
+            /home/be10/be10-team5/script/order-payment-service-deploy.sh v2 ${{ github.sha }}
+
+
 
