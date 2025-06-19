@@ -14,8 +14,8 @@ import shop.wannab.order_payment_service.service.OrderService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/guest/orders")
-public class GuestOrderController {
+@RequestMapping("/api/orders")
+public class OrderController {
 
     private final OrderService orderService;
 
