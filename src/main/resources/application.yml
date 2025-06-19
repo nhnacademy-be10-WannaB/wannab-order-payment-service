@@ -1,13 +1,23 @@
 server:
-  port: 8080
+  port: ${ORDER_PAYMENT_SERVICE_PORT}
+  shutdown: graceful
 
 spring:
   application:
     name: order-payment-service
   config:
     import: optional:classpath:properties/env.properties
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
 
-
+eureka:
+  client:
+    enabled: false
   data:
     redis:
       host: ${REDIS_HOST}
@@ -27,4 +37,6 @@ tosspayments:
 
 book:
   api:
-    url: http://localhost:8081
+    url: ${BOOK_SERVICE_URL}
+
+
