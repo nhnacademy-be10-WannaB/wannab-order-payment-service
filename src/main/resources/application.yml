@@ -15,6 +15,11 @@ spring:
     config:
       enabled: false
 
+management:
+  health:
+    rabbit:
+      enabled: false #tmp(local용)
+
 eureka:
   client:
     enabled: false
@@ -26,6 +31,7 @@ eureka:
       database: ${REDIS_DATABASE}
 
   rabbitmq:
+
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
