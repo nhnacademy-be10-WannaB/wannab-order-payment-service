@@ -1,9 +1,28 @@
+server:
+  port: ${ORDER_PAYMENT_SERVICE_PORT}
+  shutdown: graceful
+
 spring:
   application:
     name: order-payment-service
   config:
     import: optional:classpath:properties/env.properties
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
 
+management:
+  health:
+    rabbit:
+      enabled: false #tmp(local용)
+
+eureka:
+  client:
+    enabled: false
   data:
     redis:
       host: ${REDIS_HOST}
@@ -12,6 +31,7 @@ spring:
       database: ${REDIS_DATABASE}
 
   rabbitmq:
+
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
@@ -20,3 +40,9 @@ spring:
 tosspayments:
   client-key: ${TOSS_CLIENT_KEY}
   secret-key: ${TOSS_SECRET_KEY}
+
+book:
+  api:
+    url: ${BOOK_SERVICE_URL}
+
+
