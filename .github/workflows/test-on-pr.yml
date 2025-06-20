@@ -1,0 +1,64 @@
+name: PR Test
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Run build (clean package)
+        run: |
+          if [ -f src/main/resources/application-local.yml ]; then
+            mvn clean package \
+              -Dspring.config.import=optional:classpath:/application-local.yml \
+              -Dspring.profiles.active=local
+          else
+            mvn clean package
+          fi
+
+  test-success:
+    needs: test
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Notify Success
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d '{
+                 "botName": "wannab bot",
+                 "title" : "${{ github.repository }} 배포 성공",
+                 "text": "👤 머지한 사람: ${{ github.actor }}\n✅ 빌드 + 테스트 성공!",
+                 "color" : "green"
+               }' \
+               "${{ secrets.DOORAY_WEBHOOK_URL }}"
+
+  test-failure:
+    needs: test
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Notify Failure
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d '{
+                 "botName": "wannab bot",
+                  "title" : "${{ github.repository }} 배포 실패",
+                 "text": "👤 머지한 사람: ${{ github.actor }}\n❌ 빌드 또는 테스트 실패...",
+                  "color" : "red"
+               }' \
+               "${{ secrets.DOORAY_WEBHOOK_URL }}"
+
