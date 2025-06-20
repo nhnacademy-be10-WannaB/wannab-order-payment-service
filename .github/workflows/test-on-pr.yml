@@ -34,16 +34,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Test Notify Success
+        env:
+          WEBHOOK_URL: ${{ secrets.DOORAY_WEBHOOK_URL }}
         run: |
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d '{
-                 "botName": "wannab bot",
-                 "title" : "${{ github.repository }} 배포 성공",
-                 "text": "👤 머지한 사람: ${{ github.actor }}\n✅ 빌드 + 테스트 성공!",
-                 "color" : "green"
-               }' \
-               "${{ secrets.DOORAY_WEBHOOK_URL }}"
+               -d "$(jq -n --arg text "✅ ${{ github.repository }} 빌드 + 테스트 성공! 👤 ${{ github.actor }}" \
+                      '{ text: $text }')" \
+               "$WEBHOOK_URL"
 
   test-failure:
     needs: test
@@ -51,14 +49,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Test Notify Failure
+        env:
+          WEBHOOK_URL: ${{ secrets.DOORAY_WEBHOOK_URL }}
         run: |
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d '{
-                 "botName": "wannab bot",
-                  "title" : "${{ github.repository }} 배포 실패",
-                 "text": "👤 머지한 사람: ${{ github.actor }}\n❌ 빌드 또는 테스트 실패...",
-                  "color" : "red"
-               }' \
-               "${{ secrets.DOORAY_WEBHOOK_URL }}"
-
+               -d "$(jq -n --arg text "❌ ${{ github.repository }} 빌드 or 테스트 실패... 👤 ${{ github.actor }}" \
+                      '{ text: $text }')" \
+               "$WEBHOOK_URL"
