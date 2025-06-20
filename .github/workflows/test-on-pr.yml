@@ -61,4 +61,3 @@ jobs:
                   "color" : "red"
                }' \
                "${{ secrets.DOORAY_WEBHOOK_URL }}"
-
