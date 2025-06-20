@@ -65,6 +65,7 @@ public class OrderService {
         return sum;
     }
 
+    //배송지 정책 계산
     public int getShippingFee(int totalBookPrice) {
         DeliveryPolicy deliveryPolicy = deliveryPolicyService.findApplicablePolicy(totalBookPrice);
         int shippingFee = deliveryPolicy.getFee();
