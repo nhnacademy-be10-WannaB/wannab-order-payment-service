@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: order-payment-service
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+
+server:
+  shutdown: graceful
+
+eureka:
+  client:
+    enabled: false

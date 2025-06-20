@@ -1,64 +1,8 @@
 server:
-  port: ${ORDER_PAYMENT_SERVICE_PORT}
-  shutdown: graceful
+  port: 8081
 
 spring:
   application:
     name: order-payment-service
   config:
-    import: optional:classpath:properties/env.properties
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
-  cloud:
-    discovery:
-      enabled: false
-    config:
-      enabled: false
-
-  #이메일설정
-  mail:
-    host: ${mail.host}
-    port: ${mail.port}
-    username: ${mail.username}
-    password: ${mail.password}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
-management:
-  health:
-    rabbit:
-      enabled: false #tmp(local용)
-
-eureka:
-  client:
-    enabled: false
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
-      database: ${REDIS_DATABASE}
-
-  rabbitmq:
-
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
-
-
-
-
-tosspayments:
-  client-key: ${TOSS_CLIENT_KEY}
-  secret-key: ${TOSS_SECRET_KEY}
-
-book:
-  api:
-    url: ${BOOK_SERVICE_URL}
-
-
+    import: "optional:configserver:http://config-server:10394/"
