@@ -3,7 +3,10 @@ package shop.wannab.order_payment_service.service;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import shop.wannab.order_payment_service.client.BookClient;
 import shop.wannab.order_payment_service.entity.CartItem;
+import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
+import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
 import shop.wannab.order_payment_service.repository.CartRepository;
 import static shop.wannab.order_payment_service.constants.Constants.GUEST_CART_TTL;
 import java.util.*;
@@ -11,11 +14,12 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class CartService {
-
+    private final BookClient bookClient;
     private final CartRepository cartRepository;
 
-    public List<CartItem> getCartItems(long userIdentifier) {
-        return cartRepository.getCartItems(userIdentifier);
+    public OrderBookInfoListDto getCartItemInfos(long userIdentifier) {
+        List<CartItem> cartItems = cartRepository.getCartItems(userIdentifier);
+        return bookClient.getOrderBookInfos(new OrderItemListDto(cartItems));
     }
 
     public void addCartItem(Long userIdentifier, long bookId) {
