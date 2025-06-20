@@ -4,10 +4,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import shop.wannab.order_payment_service.entity.CartItem;
+import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
 import shop.wannab.order_payment_service.service.CartService;
 
-import java.util.List;
 import java.util.Objects;
 
 @RestController("/api/cart")
@@ -25,26 +24,26 @@ public class CartController {
     }
 
     @GetMapping
-    public List<CartItem> getCartItems(@RequestHeader("X-User-Id") Long userId) {
-        return cartService.getCartItems(userId);
+    public OrderBookInfoListDto getCartItems(@RequestHeader("X-User-Id") Long userId) {
+        return cartService.getCartItemInfos(userId);
     }
 
     @PostMapping("/books")
-    public List<CartItem> addProductToCart(@RequestHeader("X-User-Id") Long userId, @RequestParam Long bookId) {
+    public OrderBookInfoListDto addProductToCart(@RequestHeader("X-User-Id") Long userId, @RequestParam Long bookId) {
         cartService.addCartItem(userId, bookId);
-        return cartService.getCartItems(userId);
+        return cartService.getCartItemInfos(userId);
     }
 
     @PutMapping("/books/{book-id}")
-    public List<CartItem> updateCartItemQuantity(@RequestHeader("X-User-Id") Long userId, @PathVariable(name = "book-id") Long bookId, @RequestParam int quantity) {
+    public OrderBookInfoListDto updateCartItemQuantity(@RequestHeader("X-User-Id") Long userId, @PathVariable(name = "book-id") Long bookId, @RequestParam int quantity) {
         cartService.updateItemQuantity(userId, bookId, quantity);
-        return cartService.getCartItems(userId);
+        return cartService.getCartItemInfos(userId);
     }
 
     @DeleteMapping("/books/{book-id}")
-    public List<CartItem> removeProductFromCart(@RequestHeader("X-User-Id") Long userId, @PathVariable(name = "book-id") Long bookId) {
+    public OrderBookInfoListDto removeProductFromCart(@RequestHeader("X-User-Id") Long userId, @PathVariable(name = "book-id") Long bookId) {
         cartService.removeProductFromCart(userId, bookId);
-        return cartService.getCartItems(userId);
+        return cartService.getCartItemInfos(userId);
     }
 
 
