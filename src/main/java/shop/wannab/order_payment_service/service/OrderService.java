@@ -264,8 +264,13 @@ public class OrderService {
 
     //주문상세조회 (회원)
     @Transactional(readOnly = true)
-    public OrderDetailResponse getOrder(Long orderId) {
+    public OrderDetailResponse getOrder(Long orderId, Long userId) {
         Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
+
+        // 본인만 조회할수있도록
+        if (!userId.equals(order.getUserId())) {
+            throw new IllegalArgumentException("본인 주문만 반품가능");
+        }
 
         return orderDetailResponse(order);
     }

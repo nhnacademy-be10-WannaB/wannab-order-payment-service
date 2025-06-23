@@ -35,7 +35,7 @@ public class OrderController {
     //주문생성
     @PostMapping("/create")
     public ResponseEntity<OrderResponse> createOrder(@RequestBody OrderRequest request,
-                                                     @RequestHeader("X-UserId") Long id){
+                                                     @RequestHeader("X-User-Id") Long id){
         OrderResponse response = orderService.createOrder(request, id);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -43,7 +43,7 @@ public class OrderController {
 
     //주문목록조회 (회원)
     @GetMapping
-    public ResponseEntity<Page<OrderListResponse>> getOrdersByUser(@RequestHeader("User-Id") Long userId,
+    public ResponseEntity<Page<OrderListResponse>> getOrdersByUser(@RequestHeader("X-User-Id") Long userId,
                                                                    @RequestParam(defaultValue = "0") int page,
                                                                    @RequestParam(defaultValue = "10") int size){
 
@@ -53,7 +53,7 @@ public class OrderController {
 
     //주문전체조회(관리자)
     @GetMapping("/all")
-    public ResponseEntity<Page<OrderListResponse>> getAllOrders(@RequestHeader("User-Id") Long userId,
+    public ResponseEntity<Page<OrderListResponse>> getAllOrders(@RequestHeader("X-User-Id") Long userId,
                                                                 @RequestParam(defaultValue = "0") int page,
                                                                 @RequestParam(defaultValue = "20") int size){
         Page<OrderListResponse> orders = orderService.getOrders(userId, page, size);
@@ -62,9 +62,9 @@ public class OrderController {
 
     //주문상세조회(회원)
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDetailResponse> getOrderDetail(//@RequestHeader("User-Id") Long userId,
+    public ResponseEntity<OrderDetailResponse> getOrderDetail(@RequestHeader("X-User-Id") Long userId,
                                                               @PathVariable Long orderId){
-        OrderDetailResponse detail = orderService.getOrder(orderId);
+        OrderDetailResponse detail = orderService.getOrder(orderId, userId);
         return ResponseEntity.ok(detail);
     }
 
@@ -78,7 +78,7 @@ public class OrderController {
 
     //주문취소(결제취소) 회원
     @PatchMapping("/{orderId}")
-    public ResponseEntity<Void> cancelOrder(@RequestHeader("User-Id") Long userId,
+    public ResponseEntity<Void> cancelOrder(@RequestHeader("X-User-Id") Long userId,
                                             @PathVariable Long orderId){
         orderService.cancelOrder(orderId, userId);
         return ResponseEntity.ok().build();
@@ -94,7 +94,7 @@ public class OrderController {
 
     //주문상태변경 (관리자)
     @PatchMapping("{orderId}/status")
-    public ResponseEntity<Void> updateStatus(@RequestHeader("User-Id") Long userId,
+    public ResponseEntity<Void> updateStatus(@RequestHeader("X-User-Id") Long userId,
                                              @PathVariable Long orderId,
                                              @RequestParam OrderStatus newStatus){
         orderService.updateStatus(userId, orderId, newStatus);
@@ -103,7 +103,7 @@ public class OrderController {
 
     //반품(회원)
     @PatchMapping("/{orderId}/refund")
-    public ResponseEntity<Void> refundOrder(@RequestHeader("User-Id") Long userId,
+    public ResponseEntity<Void> refundOrder(@RequestHeader("X-User-Id") Long userId,
                                             @PathVariable Long orderId,
                                             @RequestParam RefundReason reason){   //reason은 스크롤로 (제품불량, 단순변심)
         orderService.refundOrder(userId, orderId, reason);
