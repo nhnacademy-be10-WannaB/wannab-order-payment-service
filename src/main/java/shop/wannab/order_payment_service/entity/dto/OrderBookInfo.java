@@ -13,4 +13,5 @@ public class OrderBookInfo {
     private int originPrice;
     private int salesPrice;
     private int quantity;
+    private String thumbnailUrl;
 }

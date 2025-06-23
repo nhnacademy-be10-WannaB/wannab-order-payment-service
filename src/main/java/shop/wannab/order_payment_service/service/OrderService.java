@@ -1,8 +1,15 @@
 package shop.wannab.order_payment_service.service;
 
 import io.micrometer.common.util.StringUtils;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.BookClient;
@@ -77,7 +84,7 @@ public class OrderService {
     @Transactional
     public OrderResponse createOrder(OrderRequest request, Long userId) {
         Order order = new Order();
-        order.setOrderAt(ZonedDateTime.now());
+        order.setOrderAt(LocalDateTime.now());
         order.setDeliveryWant(request.getDeliveryWant());
         order.setOrderStatus(OrderStatus.PENDING);
         order = orderReopsitory.save(order);
@@ -168,6 +175,123 @@ public class OrderService {
 
         return new OrderResponse(order.getId(), order.getOrderAt(), order.getTotalPrice());
     }
+
+
+    //주문목록조회 (회원)
+    @Transactional(readOnly = true)
+    public Page<OrderListResponse> getOrdersByUser(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
+
+        return orderReopsitory.findAllByUser_Id(userId, pageable)
+                .map(order -> new OrderListResponse(
+                        order.getId(),
+                        order.getOrderAt(),
+                        order.getOrderStatus(),
+                        order.getDeliveryAt(),
+                        order.getTotalPrice()
+                ));
+    }
+
+    // 쇼핑몰 주문 전체 조회 (관리자용)
+    @Transactional(readOnly = true)
+    public Page<OrderListResponse> getOrders(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
+
+        // ADMIN 확인
+        String role = userClient.getUserRole(userId);
+
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
+        }
+
+        // 주문자 id나 이름도 띄우면 좋을듯
+        // -> 비회원이면 이메일 띄우고
+
+        return orderReopsitory.findAll(pageable)
+                .map(order -> new OrderListResponse(
+                        order.getId(),
+                        order.getOrderAt(), //주문일시
+                        order.getOrderStatus(), //주문상태
+                        order.getDeliveryAt(), // 배송일(또는 null)
+                        order.getTotalPrice() //최종 결제금액
+                ));
+    }
+
+
+    //주문상세조회 공통로직
+    private OrderDetailResponse orderDetailResponse(Order order) {
+        // 주문정보에있는 도서정보를 불러와서 OrderBookDetailResponse dto로 매핑
+        List<OrderBook> list = orderBookRepository.findAllByOrder_Id(order.getId());
+
+        // 외부 API에 보낼 bookId + quantity 리스트 만들기
+        List<CartItem> items = list.stream()//여기선 중복된 dto로 cartItemDTO를 썼지만.. 주문이 완료된 도서에 대한 bookId와 quantity임
+                .map(ob -> new CartItem(ob.getBookId(), ob.getQuantity()))
+                .toList();
+        OrderItemListDto itemListDto = new OrderItemListDto(items);
+
+        // 외부 도서 서비스에서 도서 상세 정보 받아오기
+        OrderBookInfoListDto bookInfos = bookClient.getOrderBookInfos(itemListDto);
+
+        // bookId → OrderBookInfo 매핑 (성능 위해 Map 사용)
+        Map<Long, OrderBookInfo> bookInfoMap = bookInfos.getOrderBookInfos().stream()
+                .collect(Collectors.toMap(OrderBookInfo::getId, info -> info));
+
+        List<OrderBookDetailResponse> bookDetails = list.stream()
+                .map(ob -> {
+                    OrderBookInfo info = bookInfoMap.get(ob.getBookId());
+                    int quantity = ob.getQuantity();
+                    int totalPrice = info.getSalesPrice() * quantity;
+                    return new OrderBookDetailResponse(
+                            info.getId(),
+                            info.getTitle(),
+                            quantity,
+                            totalPrice,
+                            info.getThumbnailUrl()
+                    );
+                }).toList();
+
+        return new OrderDetailResponse(
+                bookDetails,
+                order.getId(),
+                order.getOrderAt(),
+                order.getOrderAt(), // TODO: 결제일시로 바꾸기
+                order.getOrderStatus(),
+                order.getId().toString(), // 송장번호 = 주문번호(임시)
+                order.getTotalPrice()
+        );
+    }
+
+    //주문상세조회 (회원)
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrder(Long orderId) {
+        Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
+
+        return orderDetailResponse(order);
+    }
+
+    //주문상세조회 (비회원)
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrderForGuest(Long orderId, String password) {
+        Order order = orderReopsitory.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+
+        Guest guest = guestRepository.findByOrder_Id(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("비회원 주문자 정보가 없습니다."));
+
+        if (!guest.getPassword().equals(password)) {
+            throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        return orderDetailResponse(order);
+    }
+
+    //주문취소
+
+    //주문상태변경
+
+
+
+
 
 
 }
