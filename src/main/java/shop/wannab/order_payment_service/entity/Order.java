@@ -12,6 +12,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,13 +33,13 @@ public class Order {
     private Long id;
 
     @Column(name = "order_at")
-    private ZonedDateTime orderAt;
+    private LocalDateTime orderAt;
 
     @Column(name = "delivery_at")
-    private ZonedDateTime deliveryAt;
+    private LocalDateTime deliveryAt;
 
     @Column(name = "delivery_want")
-    private ZonedDateTime deliveryWant;
+    private LocalDate deliveryWant;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status")

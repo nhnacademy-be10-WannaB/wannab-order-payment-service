@@ -25,8 +25,11 @@ public interface UserClient {
                   @PathVariable("user-id") Long userId,
                   @RequestParam("used") int usedPoint);
 
-
     // 이메일 (임시)
     @GetMapping("/api/users/{user-id}/email")
     String getUserEmail(@PathVariable("user-id") Long userId);
+
+    //유저역할
+    @GetMapping("/users/{userId}/role")
+    String getUserRole(@PathVariable("user-id") Long userId);
 }
