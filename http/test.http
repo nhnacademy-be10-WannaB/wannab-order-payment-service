@@ -1,5 +1,5 @@
-### 도서 주문 유효성 검증 요청
-POST http://localhost:8081/api/books/validate-order-items
+### 도서 주문 유효성 검증 요청 (테스트 완료)
+POST http://localhost:8082/api/books/validation/primary
 Content-Type: application/json
 
 {
