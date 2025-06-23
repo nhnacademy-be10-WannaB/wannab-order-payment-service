@@ -5,8 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.client.BookClient;
+import shop.wannab.order_payment_service.entity.OrderStatus;
+import shop.wannab.order_payment_service.entity.RefundReason;
 import shop.wannab.order_payment_service.entity.dto.*;
 import shop.wannab.order_payment_service.service.OrderService;
 
@@ -73,7 +76,48 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrderForGuest(orderId, password));
     }
 
-    //주문취소
+    //주문취소(결제취소) 회원
+    @PatchMapping("/{orderId}")
+    public ResponseEntity<Void> cancelOrder(@RequestHeader("User-Id") Long userId,
+                                            @PathVariable Long orderId){
+        orderService.cancelOrder(orderId, userId);
+        return ResponseEntity.ok().build();
+    }
 
-    //주문상태변경
+    //주문취소(결제취소) 비회원
+    @PatchMapping("/guest")
+    public ResponseEntity<Void> cancelGuestOrder(@RequestParam Long orderId,
+                                                 @RequestParam String password){
+        orderService.cancelGuestOrder(orderId, password);
+        return ResponseEntity.ok().build();
+    }
+
+    //주문상태변경 (관리자)
+    @PatchMapping("{orderId}/status")
+    public ResponseEntity<Void> updateStatus(@RequestHeader("User-Id") Long userId,
+                                             @PathVariable Long orderId,
+                                             @RequestParam OrderStatus newStatus){
+        orderService.updateStatus(userId, orderId, newStatus);
+        return ResponseEntity.ok().build();
+    }
+
+    //반품(회원)
+    @PatchMapping("/{orderId}/refund")
+    public ResponseEntity<Void> refundOrder(@RequestHeader("User-Id") Long userId,
+                                            @PathVariable Long orderId,
+                                            @RequestParam RefundReason reason){   //reason은 스크롤로 (제품불량, 단순변심)
+        orderService.refundOrder(userId, orderId, reason);
+        return ResponseEntity.ok().build();
+    }
+
+    //반품(비회원)
+    @PatchMapping("guest/refund")
+    public ResponseEntity<Void> refundGuestOrder(@RequestParam Long orderId,
+                                                 @RequestParam String password,
+                                                 @RequestParam RefundReason reason){
+        orderService.refundGuestOrder(orderId, password, reason);
+        return ResponseEntity.ok().build();
+    }
+
+
 }
