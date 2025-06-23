@@ -66,7 +66,7 @@ public class OrderController {
     }
 
     //주문상세조회(비회원)
-    @GetMapping("/orders/guest")
+    @GetMapping("/guest")
     public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestParam Long orderId,
                                                                    @RequestParam String password){
 
