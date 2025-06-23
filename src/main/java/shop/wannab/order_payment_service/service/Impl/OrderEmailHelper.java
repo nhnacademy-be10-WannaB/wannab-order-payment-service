@@ -34,7 +34,7 @@ public class OrderEmailHelper {
                 ▷ 배송희망일: %s
 
                 감사합니다.
-            """, order.getId(), order.getTotalDiscount(), order.getTotalPrice(), userAddress, order.getDeliveryWant().toLocalDate());
+            """, order.getId(), order.getTotalDiscount(), order.getTotalPrice(), userAddress, order.getDeliveryWant());
 
         String email = userClient.getUserEmail(userId);
         emailService.sendOrderEmail(email, "[WannaB] 회원 주문확인서", emailText);
@@ -50,7 +50,7 @@ public class OrderEmailHelper {
                 ▷ 배송희망일: %s
 
                 감사합니다.
-            """, guest.getName(), order.getId(), order.getTotalPrice(), guest.getAddress(), order.getDeliveryWant().toLocalDate());
+            """, guest.getName(), order.getId(), order.getTotalPrice(), guest.getAddress(), order.getDeliveryWant());
 
         emailService.sendOrderEmail(guest.getEmail(), "[WannaB] 비회원 주문확인서", emailText);
     }

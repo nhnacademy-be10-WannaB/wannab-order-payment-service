@@ -19,14 +19,23 @@ public interface UserClient {
     List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId,
                                               @PathVariable("user-id") Long userId);
 
-    //사용한 포인트 차감
+    //사용한 포인트 차감(사용한 포인트값만 던져줌)
     @PatchMapping("/api/users/{user-id}/points")
     void usePoint(@RequestHeader("X-USER-ID") Long headerUserId,
                   @PathVariable("user-id") Long userId,
                   @RequestParam("used") int usedPoint);
 
+    //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
+    @PatchMapping("/api/users/{user-id}/points/refund")
+    void refundPoint(@RequestHeader("X-USER-ID") Long headerUserId,
+                     @PathVariable("user-id") Long userId,
+                     @RequestParam("amount") int refundPoint);
 
     // 이메일 (임시)
     @GetMapping("/api/users/{user-id}/email")
     String getUserEmail(@PathVariable("user-id") Long userId);
+
+    //유저역할
+    @GetMapping("/users/{userId}/role")
+    String getUserRole(@PathVariable("user-id") Long userId);
 }
