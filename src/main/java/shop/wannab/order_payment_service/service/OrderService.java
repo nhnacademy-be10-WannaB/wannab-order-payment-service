@@ -107,13 +107,13 @@ public class OrderService {
 
         for (OrderBookInfo bookInfo : bookInfoList.getOrderBookInfos()) {
             OrderBookRequest match = bookList.stream()
-                    .filter(req -> req.getBookId().equals(bookInfo.getId()))
+                    .filter(req -> req.getBookId().equals(bookInfo.getBookId()))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("주문서 도서정보 누락"));
 
             OrderBook orderBook = new OrderBook();
             orderBook.setOrder(order);
-            orderBook.setBookId(bookInfo.getId());
+            orderBook.setBookId(bookInfo.getBookId());
             orderBook.setBookPrice(bookInfo.getSalesPrice());
             orderBook.setQuantity(bookInfo.getQuantity());
 
@@ -235,7 +235,7 @@ public class OrderService {
 
         // bookId → OrderBookInfo 매핑 (성능 위해 Map 사용)
         Map<Long, OrderBookInfo> bookInfoMap = bookInfos.getOrderBookInfos().stream()
-                .collect(Collectors.toMap(OrderBookInfo::getId, info -> info));
+                .collect(Collectors.toMap(OrderBookInfo::getBookId, info -> info));
 
         List<OrderBookDetailResponse> bookDetails = list.stream()
                 .map(ob -> {
@@ -243,7 +243,7 @@ public class OrderService {
                     int quantity = ob.getQuantity();
                     int totalPrice = info.getSalesPrice() * quantity;
                     return new OrderBookDetailResponse(
-                            info.getId(),
+                            info.getBookId(),
                             info.getTitle(),
                             quantity,
                             totalPrice,
