@@ -218,19 +218,16 @@ public class OrderService {
     }
 
 
-    //주문상세조회
-    @Transactional(readOnly = true)
-    public OrderDetailResponse getOrder(Long orderId) {
-        Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
-
+    //주문상세조회 공통로직
+    private OrderDetailResponse orderDetailResponse(Order order) {
         // 주문정보에있는 도서정보를 불러와서 OrderBookDetailResponse dto로 매핑
-        List<OrderBook> list = orderBookRepository.findAllByOrder_Id(orderId);
+        List<OrderBook> list = orderBookRepository.findAllByOrder_Id(order.getId());
+
         // 외부 API에 보낼 bookId + quantity 리스트 만들기
         List<CartItem> items = list.stream()//여기선 중복된 dto로 cartItemDTO를 썼지만.. 주문이 완료된 도서에 대한 bookId와 quantity임
                 .map(ob -> new CartItem(ob.getBookId(), ob.getQuantity()))
                 .toList();
         OrderItemListDto itemListDto = new OrderItemListDto(items);
-
 
         // 외부 도서 서비스에서 도서 상세 정보 받아오기
         OrderBookInfoListDto bookInfos = bookClient.getOrderBookInfos(itemListDto);
@@ -239,7 +236,6 @@ public class OrderService {
         Map<Long, OrderBookInfo> bookInfoMap = bookInfos.getOrderBookInfos().stream()
                 .collect(Collectors.toMap(OrderBookInfo::getId, info -> info));
 
-        // 매핑된 도서정보를 DTO로 변환
         List<OrderBookDetailResponse> bookDetails = list.stream()
                 .map(ob -> {
                     OrderBookInfo info = bookInfoMap.get(ob.getBookId());
@@ -254,18 +250,39 @@ public class OrderService {
                     );
                 }).toList();
 
-        //총가격
-        int totalPrice = order.getTotalPrice();
-
         return new OrderDetailResponse(
                 bookDetails,
                 order.getId(),
                 order.getOrderAt(),
-                order.getOrderAt(), //TODO:결제시간인데 결제에서 받아와서 수정해야함
+                order.getOrderAt(), // TODO: 결제일시로 바꾸기
                 order.getOrderStatus(),
-                order.getId().toString(), // 송장번호 임시
-                totalPrice
+                order.getId().toString(), // 송장번호 = 주문번호(임시)
+                order.getTotalPrice()
         );
+    }
+
+    //주문상세조회 (회원)
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrder(Long orderId) {
+        Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
+
+        return orderDetailResponse(order);
+    }
+
+    //주문상세조회 (비회원)
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrderForGuest(Long orderId, String password) {
+        Order order = orderReopsitory.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+
+        Guest guest = guestRepository.findByOrder_Id(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("비회원 주문자 정보가 없습니다."));
+
+        if (!guest.getPassword().equals(password)) {
+            throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        return orderDetailResponse(order);
     }
 
     //주문취소

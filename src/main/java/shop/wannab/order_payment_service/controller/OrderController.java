@@ -57,12 +57,20 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    //주문상세조회
+    //주문상세조회(회원)
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDetailResponse> getOrderDetail(//@RequestHeader("User-Id") Long userId,
                                                               @PathVariable Long orderId){
         OrderDetailResponse detail = orderService.getOrder(orderId);
         return ResponseEntity.ok(detail);
+    }
+
+    //주문상세조회(비회원)
+    @GetMapping("/orders/guest")
+    public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestParam Long orderId,
+                                                                   @RequestParam String password){
+
+        return ResponseEntity.ok(orderService.getOrderForGuest(orderId, password));
     }
 
     //주문취소
