@@ -2,7 +2,6 @@ package shop.wannab.order_payment_service.service;
 
 import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,6 @@ import shop.wannab.order_payment_service.repository.GuestRepository;
 import shop.wannab.order_payment_service.repository.OrderBookRepository;
 import shop.wannab.order_payment_service.repository.OrderReopsitory;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
-import shop.wannab.order_payment_service.service.Impl.EmailService;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
 @Service
@@ -183,7 +181,7 @@ public class OrderService {
     public Page<OrderListResponse> getOrdersByUser(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
-        return orderReopsitory.findAllByUser_Id(userId, pageable)
+        return orderReopsitory.findAllByUserId(userId, pageable)
                 .map(order -> new OrderListResponse(
                         order.getId(),
                         order.getOrderAt(),

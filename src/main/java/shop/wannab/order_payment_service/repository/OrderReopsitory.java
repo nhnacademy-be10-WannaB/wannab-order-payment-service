@@ -8,5 +8,5 @@ import shop.wannab.order_payment_service.entity.Order;
 public interface OrderReopsitory extends JpaRepository<Order, Long> {
 
     //주문목록조회 (회원)
-    Page<Order> findAllByUser_Id(Long userId, Pageable pageable);
+    Page<Order> findAllByUserId(Long userId, Pageable pageable);
 }
