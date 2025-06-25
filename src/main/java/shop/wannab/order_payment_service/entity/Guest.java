@@ -25,20 +25,6 @@ public class Guest {
     @Column(name = "guest_id")
     private Long id;
 
-    @Setter
-    @NotNull
-    @Column(name = "guest_name")
-    private String name;
-
-    @Setter
-    @NotNull
-    @Column(name = "guest_email")
-    private String email;
-
-    @Setter
-    @NotNull
-    @Column(name = "guest_phone")
-    private String phone;
 
     @Setter
     @NotNull
@@ -46,22 +32,13 @@ public class Guest {
     private String password;
 
     @Setter
-    @NotNull
-    @Column(name = "guest_address")
-    private String address;
-
-    @Setter
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
     @NotNull
     private Order order;
 
-    public Guest(String name, String email, String phone, String password, String address, Order order) {
-        this.name = name;
-        this.email = email;
-        this.phone = phone;
+    public Guest(String password, Order order) {
         this.password = password;
-        this.address = address;
         this.order = order;
     }
 

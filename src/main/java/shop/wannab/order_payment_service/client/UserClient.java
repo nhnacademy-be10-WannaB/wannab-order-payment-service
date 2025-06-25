@@ -1,12 +1,9 @@
 package shop.wannab.order_payment_service.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.entity.dto.UserAddressResponse;
+import shop.wannab.order_payment_service.entity.dto.PointProcessRequest;
 
 import java.util.List;
 
@@ -19,11 +16,9 @@ public interface UserClient {
     List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId,
                                               @PathVariable("user-id") Long userId);
 
-    //사용한 포인트 차감(사용한 포인트값만 던져줌)
-    @PatchMapping("/api/users/{user-id}/points")
-    void usePoint(@RequestHeader("X-USER-ID") Long headerUserId,
-                  @PathVariable("user-id") Long userId,
-                  @RequestParam("used") int usedPoint);
+    @PostMapping("/api/users/points/process")
+    void processPoints(@RequestBody PointProcessRequest pointProcessRequest);
+
 
     //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
     @PatchMapping("/api/users/{user-id}/points/refund")

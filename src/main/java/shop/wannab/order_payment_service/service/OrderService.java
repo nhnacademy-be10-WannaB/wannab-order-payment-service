@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ public class OrderService {
     private final UserClient userClient;
     private final BookClient bookClient;
     private final WrappingPaperService wrappingPaperService;
+    //private final ApplicationEventPublisher applicationEventPublisher;
 
     private final OrderReopsitory orderReopsitory;
     private final GuestRepository guestRepository;
@@ -87,7 +89,16 @@ public class OrderService {
         int totalDiscountAmount = getTotalDiscountAmount(orderSubmitDto);
         int shippingFee = getShippingFee(totalBookPrice);
         int totalWrappingPaperPrice = getTotalWrappingPaperPrice(orderSubmitDto);
-        Order order = new Order(userId, getShippingDate(), orderSubmitDto.getAddress(), orderSubmitDto.getDeliveryRequestAt(), totalBookPrice, totalDiscountAmount, shippingFee, totalWrappingPaperPrice);
+        Order order = new Order(userId,
+                getShippingDate(),
+                orderSubmitDto.getDeliveryRequestAt(),
+                totalBookPrice, totalDiscountAmount,
+                shippingFee,
+                totalWrappingPaperPrice,
+                orderSubmitDto.getRecipientName(),
+                orderSubmitDto.getEmail(),
+                orderSubmitDto.getRecipientPhoneNumber(),
+                orderSubmitDto.getRecipientAddress());
 
         order = orderReopsitory.save(order);
 
@@ -102,16 +113,22 @@ public class OrderService {
         orderBookRepository.saveAll(orderBooks);
 
         if (userId > 0) { //회원일시
-            // 이메일 발송
-            emailHelper.sendMemberOrderEmail(userId, order, orderSubmitDto.getAddress());
+            try {//TODO: rabbitmq 적용
+                //userClient.processPoints(new PointProcessRequest(userId, order.getId(), orderSubmitDto.getUsedPoints(), order.getTotalPrice()));
 
+            } catch (RuntimeException e) {
+            //log.warn("포인트 적립 실패: userId={}, orderId={}", userId, orderId);
+            }
         } else { //비회원일시
-            Guest guest = new Guest(orderSubmitDto.getGuestName(), orderSubmitDto.getGuestEmail(), orderSubmitDto.getGuestPhoneNumber(), orderSubmitDto.getGuestPassword(), orderSubmitDto.getGuestAddress(), order);
+            Guest guest = new Guest(orderSubmitDto.getGuestPassword(), order);
             guestRepository.save(guest);
-            //이메일 발송
-            emailHelper.sendGuestOrderEmail(guest, order);
         }
 
+        try {
+            //emailHelper.sendMemberOrderEmail(userId, order, orderSubmitDto.getAddress());
+        } catch (RuntimeException e) {
+
+        }
         int payAmount = order.getTotalPrice();
         String orderName = createOrderName(bookSimpleInfos, bookIds.size());
         OrderInfoForPayment orderInfoForPayment = new OrderInfoForPayment(order.getId(), orderName, payAmount);

@@ -3,18 +3,16 @@ package shop.wannab.order_payment_service.controller;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.client.BookClient;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.RefundReason;
 import shop.wannab.order_payment_service.entity.dto.*;
 import shop.wannab.order_payment_service.service.OrderService;
-import shop.wannab.order_payment_service.validator.OrderSubmitDtoValidator;
+
 
 @RestController
 @RequestMapping("/api/orders")
@@ -22,12 +20,6 @@ import shop.wannab.order_payment_service.validator.OrderSubmitDtoValidator;
 public class OrderController {
     private final BookClient bookClient;
     private final OrderService orderService;
-    private final OrderSubmitDtoValidator orderSubmitDtoValidator;
-
-    @InitBinder("orderSubmitDto")
-    public void initBinder(WebDataBinder binder) {
-        binder.addValidators(orderSubmitDtoValidator);
-    }
 
     @PostMapping
     public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader("X-User-Id") Long userId, @RequestBody OrderItemListDto orderItemListDto) {
@@ -41,10 +33,7 @@ public class OrderController {
 
 
     @PostMapping("/new")
-    OrderInfoForPayment processOrder(@RequestHeader("X-USER-ID") Long userId, @Validated @RequestBody OrderSubmitDto orderSubmitDto, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            System.out.println("T Y T");
-        }
+    OrderInfoForPayment processOrder(@RequestHeader("X-USER-ID") Long userId, @RequestBody OrderSubmitDto orderSubmitDto) {
         OrderInfoForPayment response = orderService.createOrder(orderSubmitDto, userId);
         return response;
     }

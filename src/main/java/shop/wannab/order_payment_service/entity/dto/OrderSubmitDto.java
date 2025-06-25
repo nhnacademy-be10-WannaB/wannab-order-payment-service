@@ -21,19 +21,16 @@ public class OrderSubmitDto {
     List<BookOrderSubmitDto> bookOrderSubmitDtos = new ArrayList<>();
     private String userId;
     private Integer usedPoints;
-    private String address;
     @Future(message = "희망 배송일은 오늘 이후여야합니다")
     private LocalDate deliveryRequestAt;
-
-    private String guestName;
     @Email(message = "올바른 이메일 형식이 아닙니다")
-    private String guestEmail;
+    private String email;
     @Pattern(regexp = "^010-\\d{4}-\\d{4}$", message = "올바른 번호형식이 아닙니다 ex: xxx-xxxx-xxxx")
-    private String guestPhoneNumber;
+    private String recipientPhoneNumber;
+   private String recipientName;
+    private String recipientAddress;
     @Pattern(regexp = "^\\d{4,6}$", message = "비밀번호는 숫자 4~6자 사이여야 합니다")
     private String guestPassword;
-    private String guestAddress;
-    private String guestDetailAddress;
     //TODO: 전체 금액에 적용될 쿠폰정보 추가
 
 }
