@@ -1,5 +1,6 @@
 package shop.wannab.order_payment_service.entity.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import lombok.Data;
@@ -12,6 +13,6 @@ public class OrderListResponse {
     private final Long orderId;
     private final LocalDateTime orderAt;    //주문일시
     private final OrderStatus orderStatus;  //배송상태
-    private final LocalDateTime deliveryAt; //출고일
+    private final LocalDate deliveryAt; //출고일
     private final int totalPrice;
 }

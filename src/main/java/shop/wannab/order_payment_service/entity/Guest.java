@@ -56,6 +56,14 @@ public class Guest {
     @NotNull
     private Order order;
 
+    public Guest(String name, String email, String phone, String password, String address, Order order) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.password = password;
+        this.address = address;
+        this.order = order;
+    }
 
 
 }

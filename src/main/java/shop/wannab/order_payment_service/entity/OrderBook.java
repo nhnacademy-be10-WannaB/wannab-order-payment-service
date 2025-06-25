@@ -53,4 +53,12 @@ public class OrderBook {
     @JoinColumn(name = "wp_id")
     private WrappingPaper wrappingPaper;
 
+    public OrderBook(Order order, long bookId, WrappingPaper wrappingPaper, int quantity, int pricePerBook) {
+        this.order = order;
+        this.bookId = bookId;
+        this.wrappingPaper = wrappingPaper;
+        this.quantity = quantity;
+        this.bookPrice = pricePerBook;
+        this.wrappingPrice = wrappingPaper.getPrice();
+    }
 }

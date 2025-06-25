@@ -4,17 +4,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -35,8 +32,8 @@ public class Order {
     @Column(name = "order_at")
     private LocalDateTime orderAt;
 
-    @Column(name = "delivery_at")
-    private LocalDateTime deliveryAt;
+    @Column(name = "shipped_at")
+    private LocalDate shippedAt;
 
     @Column(name = "delivery_want")
     private LocalDate deliveryWant;
@@ -48,11 +45,11 @@ public class Order {
     @Column(name = "total_book_price")
     private int totalBookPrice;
 
-    @Column(name = "total_discount")
-    private int totalDiscount;
+    @Column(name = "total_discount_amount")
+    private int totalDiscountAmount;
 
-    @Column(name = "delivery_fee")
-    private int deliveryFee;
+    @Column(name = "shipping_fee")
+    private int shippingFee;
 
     @Column(name = "total_wrapping_price")
     private int totalWrappingPrice;
@@ -62,15 +59,28 @@ public class Order {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "adress_id")
-    private Long addressId;
+    @Column(name = "adress")
+    private String address;
 
+
+    public Order(Long userId, LocalDate shippedAt, String address, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice) {
+        this.orderAt =  LocalDateTime.now();
+        this.shippedAt = shippedAt;
+        this.orderStatus = OrderStatus.PENDING;
+        this.deliveryWant = deliveryRequestAt;
+        this.userId = userId;
+        this.address = address;
+        this.totalBookPrice = totalBookPrice;
+        this.totalDiscountAmount = totalDiscountAmount;
+        this.shippingFee = shippingFee;
+        this.totalWrappingPrice = totalWrappingPaperPrice;
+    }
 
     //총 결제금액 계산
     public int getTotalPrice() {
         return totalBookPrice
                 + totalWrappingPrice
-                + deliveryFee
-                - totalDiscount;
+                + shippingFee
+                - totalDiscountAmount;
     }
 }
