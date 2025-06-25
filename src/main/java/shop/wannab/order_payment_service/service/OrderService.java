@@ -1,12 +1,9 @@
 package shop.wannab.order_payment_service.service;
 
-import io.micrometer.common.util.StringUtils;
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.chrono.ChronoLocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +25,6 @@ import shop.wannab.order_payment_service.entity.RefundReason;
 import shop.wannab.order_payment_service.entity.WrappingPaper;
 import shop.wannab.order_payment_service.entity.dto.*;
 
-import shop.wannab.order_payment_service.exception.WrappingPaperNotFoundException;
 import shop.wannab.order_payment_service.repository.GuestRepository;
 import shop.wannab.order_payment_service.repository.OrderBookRepository;
 import shop.wannab.order_payment_service.repository.OrderReopsitory;
@@ -64,74 +60,6 @@ public class OrderService {
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
         //TODO: coupon 정보 추후에 추가
         return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints);
-    }
-
-
-    public int getTotalBookPrice(OrderBookInfoListDto orderBookInfoListDto) {
-        int totalBookPrice = 0;
-        List<OrderBookInfo> bookOrderSubmitDtos = orderBookInfoListDto.getOrderBookInfos();
-        for (OrderBookInfo dto : bookOrderSubmitDtos) {
-            totalBookPrice += dto.getSalesPrice() * dto.getQuantity();
-        }
-        return totalBookPrice;
-    }
-
-    public int getTotalBookPrice(BookIdTitlePriceListDto orderBookInfoListDto, List<BookOrderSubmitDto> idQuantityEtcDto) {
-        int sum = 0;
-
-        Map<Long, Integer> bookIdToQuantityMap = idQuantityEtcDto.stream()
-        .collect(Collectors.toMap(
-            BookOrderSubmitDto::getBookId,
-            BookOrderSubmitDto::getBookQuantity
-        )); //TODO: 개선 여지 O
-
-        for (BookIdTitlePriceDto info : orderBookInfoListDto.getIdTitlePriceDtos()) {
-            long bookId = info.getBookId();
-            int quantity = bookIdToQuantityMap.get(bookId);
-            sum += info.getSalesPrice() * quantity;
-        }
-
-        return sum;
-    }
-
-    //배송지 정책 계산
-    public int getShippingFee(int totalBookPrice) {
-        DeliveryPolicy deliveryPolicy = deliveryPolicyService.findApplicablePolicy(totalBookPrice);
-        int shippingFee = deliveryPolicy.getFee();
-        return shippingFee;
-    }
-
-    public int getTotalWrappingPaperPrice(OrderSubmitDto submitDto) {
-        int totalWrappingPaperPrice = 0;
-        List<BookOrderSubmitDto> bookOrderSubmitDtos = submitDto.getBookOrderSubmitDtos();
-        for (BookOrderSubmitDto dto : bookOrderSubmitDtos) {
-            WrappingPaper wrappingPaper = wrappingPaperRepository.findById(dto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("잘못된 포장지 아이디"));
-            totalWrappingPaperPrice += wrappingPaper.getPrice();
-        }
-        return totalWrappingPaperPrice;
-    }
-
-    public LocalDate getShippingDate() { //출고일 정책
-        LocalDateTime now = LocalDateTime.now();
-
-        // 15시 이후면 다음 날로
-        if (now.toLocalTime().isAfter(LocalTime.of(15, 0))) {
-            now = now.plusDays(1);
-        }
-
-        LocalDate date = now.toLocalDate();
-
-        // 주말이면 월요일까지 이동
-        while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
-               date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            date = date.plusDays(1);
-        }
-        return date;
-    }
-
-    public String createOrderName(BookIdTitlePriceListDto idTitlePriceListDto, int orderItemCount) {
-        String oneOfBookTitle = idTitlePriceListDto.getIdTitlePriceDtos().get(0).getTitle();
-        return String.format("%s외 %d권 주문", oneOfBookTitle, orderItemCount);
     }
 
     //주문생성
@@ -174,12 +102,10 @@ public class OrderService {
         orderBookRepository.saveAll(orderBooks);
 
         if (userId > 0) { //회원일시
-
             // 이메일 발송
             emailHelper.sendMemberOrderEmail(userId, order, orderSubmitDto.getAddress());
 
         } else { //비회원일시
-
             Guest guest = new Guest(orderSubmitDto.getGuestName(), orderSubmitDto.getGuestEmail(), orderSubmitDto.getGuestPhoneNumber(), orderSubmitDto.getGuestPassword(), orderSubmitDto.getGuestAddress(), order);
             guestRepository.save(guest);
             //이메일 발송
@@ -192,11 +118,78 @@ public class OrderService {
         return orderInfoForPayment;
     }
 
+    private int getTotalBookPrice(OrderBookInfoListDto orderBookInfoListDto) {
+        int totalBookPrice = 0;
+        List<OrderBookInfo> bookOrderSubmitDtos = orderBookInfoListDto.getOrderBookInfos();
+        for (OrderBookInfo dto : bookOrderSubmitDtos) {
+            totalBookPrice += dto.getSalesPrice() * dto.getQuantity();
+        }
+        return totalBookPrice;
+    }
 
-    public int getTotalDiscountAmount(OrderSubmitDto dto) {
+    private int getTotalBookPrice(BookIdTitlePriceListDto orderBookInfoListDto, List<BookOrderSubmitDto> idQuantityEtcDto) {
+        int sum = 0;
+
+        Map<Long, Integer> bookIdToQuantityMap = idQuantityEtcDto.stream()
+        .collect(Collectors.toMap(
+            BookOrderSubmitDto::getBookId,
+            BookOrderSubmitDto::getBookQuantity
+        )); //TODO: 개선 여지 O
+
+        for (BookIdTitlePriceDto info : orderBookInfoListDto.getIdTitlePriceDtos()) {
+            long bookId = info.getBookId();
+            int quantity = bookIdToQuantityMap.get(bookId);
+            sum += info.getSalesPrice() * quantity;
+        }
+
+        return sum;
+    }
+
+    //배송지 정책 계산
+    private int getShippingFee(int totalBookPrice) {
+        DeliveryPolicy deliveryPolicy = deliveryPolicyService.findApplicablePolicy(totalBookPrice);
+        int shippingFee = deliveryPolicy.getFee();
+        return shippingFee;
+    }
+
+    private int getTotalWrappingPaperPrice(OrderSubmitDto submitDto) {
+        int totalWrappingPaperPrice = 0;
+        List<BookOrderSubmitDto> bookOrderSubmitDtos = submitDto.getBookOrderSubmitDtos();
+        for (BookOrderSubmitDto dto : bookOrderSubmitDtos) {
+            WrappingPaper wrappingPaper = wrappingPaperRepository.findById(dto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("잘못된 포장지 아이디"));
+            totalWrappingPaperPrice += wrappingPaper.getPrice();
+        }
+        return totalWrappingPaperPrice;
+    }
+
+    private LocalDate getShippingDate() { //출고일 정책
+        LocalDateTime now = LocalDateTime.now();
+
+        // 15시 이후면 다음 날로
+        if (now.toLocalTime().isAfter(LocalTime.of(15, 0))) {
+            now = now.plusDays(1);
+        }
+
+        LocalDate date = now.toLocalDate();
+
+        // 주말이면 월요일까지 이동
+        while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
+               date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            date = date.plusDays(1);
+        }
+        return date;
+    }
+
+    private String createOrderName(BookIdTitlePriceListDto idTitlePriceListDto, int orderItemCount) {
+        String oneOfBookTitle = idTitlePriceListDto.getIdTitlePriceDtos().get(0).getTitle();
+        return String.format("%s외 %d권 주문", oneOfBookTitle, orderItemCount);
+    }
+
+    private int getTotalDiscountAmount(OrderSubmitDto dto) {
         int totalDiscountAmount = 0;
         List<BookOrderSubmitDto> bookOrderSubmitDtos = dto.getBookOrderSubmitDtos();
         for (BookOrderSubmitDto bookDto : bookOrderSubmitDtos) {
+            //bookDto.
             totalDiscountAmount += 0; // TODO: 주문한 책 단위별 할인금액
         }
         if (Objects.nonNull(dto.getUserId()) && !dto.getUserId().isBlank()) {
