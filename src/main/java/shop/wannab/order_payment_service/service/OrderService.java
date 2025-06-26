@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -89,7 +88,9 @@ public class OrderService {
         int totalDiscountAmount = getTotalDiscountAmount(orderSubmitDto);
         int shippingFee = getShippingFee(totalBookPrice);
         int totalWrappingPaperPrice = getTotalWrappingPaperPrice(orderSubmitDto);
+        String orderName = createOrderName(bookSimpleInfos.getIdTitlePriceDtos().get(0).getTitle(), bookIds.size());
         Order order = new Order(userId,
+                orderName,
                 getShippingDate(),
                 orderSubmitDto.getDeliveryRequestAt(),
                 totalBookPrice, totalDiscountAmount,
@@ -130,7 +131,7 @@ public class OrderService {
 
         }
         int payAmount = order.getTotalPrice();
-        String orderName = createOrderName(bookSimpleInfos, bookIds.size());
+
         OrderInfoForPayment orderInfoForPayment = new OrderInfoForPayment(order.getId(), orderName, payAmount);
         return orderInfoForPayment;
     }
@@ -197,8 +198,10 @@ public class OrderService {
         return date;
     }
 
-    private String createOrderName(BookIdTitlePriceListDto idTitlePriceListDto, int orderItemCount) {
-        String oneOfBookTitle = idTitlePriceListDto.getIdTitlePriceDtos().get(0).getTitle();
+    private String createOrderName(String oneOfBookTitle, int orderItemCount) {
+        if (orderItemCount > 1) {
+            return String.format("%s 주문", oneOfBookTitle);
+        }
         return String.format("%s외 %d권 주문", oneOfBookTitle, orderItemCount);
     }
 
@@ -218,12 +221,13 @@ public class OrderService {
 
     //주문목록조회 (회원)
     @Transactional(readOnly = true)
-    public Page<OrderListResponse> getOrdersByUser(Long userId, int page, int size) {
+    public Page<OrderLookupResponse> getOrdersByUser(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
         return orderReopsitory.findAllByUserId(userId, pageable)
-                .map(order -> new OrderListResponse(
+                .map(order -> new OrderLookupResponse(
                         order.getId(),
+                        order.getOrderName(),
                         order.getOrderAt(),
                         order.getOrderStatus(),
                         order.getShippedAt(),
@@ -233,7 +237,7 @@ public class OrderService {
 
     // 쇼핑몰 주문 전체 조회 (관리자용)
     @Transactional(readOnly = true)
-    public Page<OrderListResponse> getOrders(Long userId, int page, int size) {
+    public Page<OrderLookupResponse> getOrders(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
         // ADMIN 확인
@@ -247,8 +251,9 @@ public class OrderService {
         // -> 비회원이면 이메일 띄우고
 
         return orderReopsitory.findAll(pageable)
-                .map(order -> new OrderListResponse(
+                .map(order -> new OrderLookupResponse(
                         order.getId(),
+                        order.getOrderName(),
                         order.getOrderAt(), //주문일시
                         order.getOrderStatus(), //주문상태
                         order.getShippedAt(), // 배송일(또는 null)
@@ -470,10 +475,5 @@ public class OrderService {
         }
         order.setOrderStatus(OrderStatus.RETURNED);
     }
-
-
-
-
-
 
 }

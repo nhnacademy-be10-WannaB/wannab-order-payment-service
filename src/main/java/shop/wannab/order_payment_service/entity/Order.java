@@ -8,10 +8,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +17,6 @@ import lombok.Setter;
 
 
 @Entity
-@Setter
 @Getter
 @NoArgsConstructor
 @Table(name = "orders")
@@ -30,6 +27,10 @@ public class Order {
     @Column(name = "order_id")
     private Long id;
 
+    @NotNull
+    @Column(name = "order_name")
+    private String orderName;
+
     @Column(name = "order_at")
     private LocalDateTime orderAt;
 
@@ -39,6 +40,7 @@ public class Order {
     @Column(name = "delivery_want")
     private LocalDate deliveryWant;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status")
     private OrderStatus orderStatus;
@@ -58,29 +60,26 @@ public class Order {
     @Column(name = "user_id")
     private Long userId;
 
-    @Setter
     @NotNull
     @Column(name = "recipient_name")
     private String recipientName;
 
-    @Setter
     @NotNull
     @Column(name = "recipient_email")
     private String recipientEmail;
 
-    @Setter
     @NotNull
     @Column(name = "recipient_phone")
     private String recipientPhoneNumber;
 
-    @Setter
     @NotNull
     @Column(name = "recipient_address")
     private String recipientAddress;
 
 
-    public Order(Long userId, LocalDate shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
+    public Order(Long userId, String orderName, LocalDate shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
         this.orderAt =  LocalDateTime.now();
+        this.orderName = orderName;
         this.shippedAt = shippedAt;
         this.orderStatus = OrderStatus.PENDING;
         this.deliveryWant = deliveryRequestAt;
