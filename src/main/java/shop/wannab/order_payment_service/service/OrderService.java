@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,7 @@ import shop.wannab.order_payment_service.repository.OrderReopsitory;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -38,7 +40,7 @@ public class OrderService {
     private final GuestRepository guestRepository;
     private final OrderBookRepository orderBookRepository;
     private final WrappingPaperRepository wrappingPaperRepository;
-    private final OrderEmailHelper emailHelper;
+    private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
         OrderBookInfoListDto orderBookInfos = bookClient.getOrderBookInfos(orderItemListDto);
@@ -137,9 +139,9 @@ public class OrderService {
         }
 
         try {
-            //emailHelper.sendMemberOrderEmail(userId, order, orderSubmitDto.getAddress());
+            orderEmailHelper.sendOrderEmail(order, orderSubmitDto.getEmail(), orderSubmitDto.getRecipientAddress(), orderSubmitDto.getRecipientName());
         } catch (RuntimeException e) {
-
+            log.info("이메일 전송실패");
         }
         int payAmount = order.getTotalPrice();
 
