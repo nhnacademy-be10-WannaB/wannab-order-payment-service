@@ -14,15 +14,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.BookClient;
+import shop.wannab.order_payment_service.client.CouponClient;
 import shop.wannab.order_payment_service.client.UserClient;
-import shop.wannab.order_payment_service.entity.CartItem;
-import shop.wannab.order_payment_service.entity.DeliveryPolicy;
-import shop.wannab.order_payment_service.entity.Guest;
-import shop.wannab.order_payment_service.entity.Order;
-import shop.wannab.order_payment_service.entity.OrderBook;
-import shop.wannab.order_payment_service.entity.OrderStatus;
-import shop.wannab.order_payment_service.entity.RefundReason;
-import shop.wannab.order_payment_service.entity.WrappingPaper;
+import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
 import shop.wannab.order_payment_service.repository.GuestRepository;
@@ -38,7 +32,7 @@ public class OrderService {
     private final UserClient userClient;
     private final BookClient bookClient;
     private final WrappingPaperService wrappingPaperService;
-    //private final ApplicationEventPublisher applicationEventPublisher;
+    private final CouponClient couponClient;
 
     private final OrderReopsitory orderReopsitory;
     private final GuestRepository guestRepository;
@@ -53,14 +47,26 @@ public class OrderService {
         int userPoints = 0;
         List<UserAddressResponse> userAddresses = List.of();
 
-        if (userId > 0) {
-//            userPoints = userClient.getUserPoints(userId, userId);
-//            userAddresses = userClient.getAllAddresses(userId, userId);
-        }
-
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
-        //TODO: coupon 정보 추후에 추가
-        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints);
+
+        if (userId > 0) {
+            userPoints = userClient.getUserPoints(userId, userId);
+            userAddresses = userClient.getAllAddresses(userId, userId);
+            List<Long> bookIdList = orderBookInfos.getOrderBookInfos().stream().map(OrderBookInfo::getBookId).toList();
+
+            ApplicableCouponsDto applicableCouponsDto = couponClient.getApplicableCoupons(userId, new OrderCouponsRequestDto(bookIdList)).getBody();
+
+            for (OrderBookInfo orderBookInfo : orderBookInfos.getOrderBookInfos()) {
+                long bookId = orderBookInfo.getBookId();
+                Map<Long, List<BookCouponDto>> bookIdCouponsMap = applicableCouponsDto.getItemCoupons();
+                List<BookCouponDto> bookApplicableCoupons = bookIdCouponsMap.get(bookId);
+                orderBookInfo.setApplicableCoupons(bookApplicableCoupons);
+
+            }
+            return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, applicableCouponsDto.getOrderCoupons());
+        }
+        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of());
+
     }
 
     //주문생성
@@ -73,7 +79,10 @@ public class OrderService {
 
         OrderItemListDto itemListDto = new OrderItemListDto(itemList);
         bookClient.validateOrderItems(itemListDto);
+
         //------- 검증 끝-------//
+        bookClient.decreaseStock(itemListDto);
+
         List<Long> bookIds = orderSubmitDto.getBookOrderSubmitDtos().stream().map(BookOrderSubmitDto::getBookId).toList();
         BookIdTitlePriceListDto bookSimpleInfos = bookClient.getBookSimpleInfos(new BookIdListDto(bookIds));
 
@@ -85,7 +94,7 @@ public class OrderService {
 
         //------- Orders table record add -------//
         int totalBookPrice = getTotalBookPrice(bookSimpleInfos, orderSubmitDto.getBookOrderSubmitDtos());
-        int totalDiscountAmount = getTotalDiscountAmount(orderSubmitDto);
+        int totalDiscountAmount = getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
         int shippingFee = getShippingFee(totalBookPrice);
         int totalWrappingPaperPrice = getTotalWrappingPaperPrice(orderSubmitDto);
         String orderName = createOrderName(bookSimpleInfos.getIdTitlePriceDtos().get(0).getTitle(), bookIds.size());
@@ -106,8 +115,10 @@ public class OrderService {
         //------- Order_book table record add -------//
         List<OrderBook> orderBooks = new ArrayList<>();
         for (BookOrderSubmitDto bookOrderSubmitDto : orderSubmitDto.getBookOrderSubmitDtos()) {
-            //TODO: 도서 재고 감소
-            WrappingPaper wrappingPaper = wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("존재하지 않는 포장지 아이디"));
+            WrappingPaper wrappingPaper = null;
+            if (Objects.nonNull(bookOrderSubmitDto.getWrappingPaperId())) {
+                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("존재하지 않는 포장지 아이디"));
+            }
             OrderBook orderBook = new OrderBook(order, bookOrderSubmitDto.getBookId(), wrappingPaper, bookOrderSubmitDto.getBookQuantity(), bookIdPriceMap.get(bookOrderSubmitDto.getBookId()));
             orderBooks.add(orderBook);
         }
@@ -115,7 +126,7 @@ public class OrderService {
 
         if (userId > 0) { //회원일시
             try {//TODO: rabbitmq 적용
-                //userClient.processPoints(new PointProcessRequest(userId, order.getId(), orderSubmitDto.getUsedPoints(), order.getTotalPrice()));
+                userClient.processPoints(new PointProcessRequest(userId, order.getId(), orderSubmitDto.getUsedPoints(), order.getTotalPrice()));
 
             } catch (RuntimeException e) {
             //log.warn("포인트 적립 실패: userId={}, orderId={}", userId, orderId);
@@ -174,6 +185,9 @@ public class OrderService {
         int totalWrappingPaperPrice = 0;
         List<BookOrderSubmitDto> bookOrderSubmitDtos = submitDto.getBookOrderSubmitDtos();
         for (BookOrderSubmitDto dto : bookOrderSubmitDtos) {
+            if (Objects.isNull(dto.getWrappingPaperId()) || dto.getWrappingPaperId() == 0L) {
+                continue;
+            }
             WrappingPaper wrappingPaper = wrappingPaperRepository.findById(dto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("잘못된 포장지 아이디"));
             totalWrappingPaperPrice += wrappingPaper.getPrice();
         }
@@ -205,12 +219,45 @@ public class OrderService {
         return String.format("%s외 %d권 주문", oneOfBookTitle, orderItemCount);
     }
 
-    private int getTotalDiscountAmount(OrderSubmitDto dto) {
+    private int getTotalDiscountAmount(Long userId, OrderSubmitDto dto, BookIdTitlePriceListDto bookIdTitlePriceListDto, int totalBookPrice) {
         int totalDiscountAmount = 0;
         List<BookOrderSubmitDto> bookOrderSubmitDtos = dto.getBookOrderSubmitDtos();
+        //책에 적용한 쿠폰의 할인정보 받아오는 로직//
+        Map<Long, Long> couponIdBookIdMap = new HashMap<>();
         for (BookOrderSubmitDto bookDto : bookOrderSubmitDtos) {
-            //bookDto.
-            totalDiscountAmount += 0; // TODO: 주문한 책 단위별 할인금액
+            couponIdBookIdMap.put(bookDto.getAppliedCouponId(), bookDto.getBookId());
+        }
+
+        if (Objects.nonNull(dto.getAppliedOrderCouponId())) {
+            couponIdBookIdMap.put(dto.getAppliedOrderCouponId(), null); //주문에 적용할 쿠폰아이디
+        }
+
+        List<TryApplyCouponsResponseDto> couponDiscountInfos = couponClient.getApplyCoupons(userId, new TryApplyCouponsRequestDto(couponIdBookIdMap)).getBody();//여기서 책아이디:가격 맵 생성
+        Map<Long, Integer> bookIdPriceMap = new HashMap<>();
+        for (BookIdTitlePriceDto idTitlePriceDto : bookIdTitlePriceListDto.getIdTitlePriceDtos()) {
+            bookIdPriceMap.put(idTitlePriceDto.getBookId(), idTitlePriceDto.getSalesPrice());
+        }
+        //책에 적용할 쿠폰 할인가 합산
+        for (TryApplyCouponsResponseDto discountInfo : couponDiscountInfos) {
+            Long bookId = discountInfo.getBookId();
+            if (Objects.nonNull(bookId)) {//책 각각에 적용
+                Integer bookPrice = bookIdPriceMap.get(bookId);
+                if (discountInfo.getDiscountType().equals(DiscountType.FIXED)) {
+                    totalDiscountAmount += discountInfo.getDiscountValue();
+                } else {
+                    totalDiscountAmount += (bookPrice * ((double)discountInfo.getDiscountValue() / 100));
+                }
+
+            } else { //totalBookPrice에 적용
+                if (!Objects.equals(dto.getAppliedOrderCouponId(), discountInfo.getCouponId())) { //early exit
+                    continue;
+                }
+                if (discountInfo.getDiscountType().equals(DiscountType.FIXED)) {
+                    totalDiscountAmount += discountInfo.getDiscountValue();
+                } else {
+                    totalDiscountAmount += (double) totalBookPrice * discountInfo.getDiscountValue() / 100;
+                }
+            }
         }
         if (Objects.nonNull(dto.getUserId()) && !dto.getUserId().isBlank()) {
             totalDiscountAmount += dto.getUsedPoints();

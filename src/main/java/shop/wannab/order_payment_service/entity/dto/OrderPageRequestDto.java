@@ -14,5 +14,5 @@ public class OrderPageRequestDto {
     private int totalBookPrice;
     private int shippingFee;
     private int userPoints;
-    //TODO: coupon정보들..
+    private List<OrderCouponDto> orderCoupons;
 }

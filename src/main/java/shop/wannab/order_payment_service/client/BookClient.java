@@ -1,6 +1,7 @@
 package shop.wannab.order_payment_service.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import shop.wannab.order_payment_service.entity.dto.BookIdListDto;
@@ -19,5 +20,8 @@ public interface BookClient {
 
     @PostMapping("/api/books/simple-info")
     BookIdTitlePriceListDto getBookSimpleInfos(@RequestBody BookIdListDto bookIdListDto);
+
+    @PostMapping("/decrease-stock")
+    ResponseEntity<Void> decreaseStock(@RequestBody OrderItemListDto orderItemListDto);
 }
 

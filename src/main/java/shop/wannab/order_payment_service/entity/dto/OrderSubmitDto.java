@@ -31,6 +31,6 @@ public class OrderSubmitDto {
     private String recipientAddress;
     @Pattern(regexp = "^\\d{4,6}$", message = "비밀번호는 숫자 4~6자 사이여야 합니다")
     private String guestPassword;
-    //TODO: 전체 금액에 적용될 쿠폰정보 추가
+    private Long appliedOrderCouponId;
 
 }
