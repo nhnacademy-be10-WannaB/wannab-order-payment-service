@@ -18,14 +18,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Run build (clean package)
+      - name: Run build (clean test)
         run: |
-          if [ -f src/main/resources/application-local.yml ]; then
-            mvn clean package \
-              -Dspring.config.import=optional:classpath:/application-local.yml \
-              -Dspring.profiles.active=local
+          if [ -f src/main/resources/application-ci.yml ]; then
+            mvn clean test \
+              -Dspring.config.import=optional:classpath:/application-ci.yml \
+              -Dspring.profiles.active=ci
           else
-            mvn clean package
+            mvn clean test
           fi
 
   test-success:
@@ -39,9 +39,14 @@ jobs:
                -X POST \
                -d '{
                  "botName": "wannab bot",
-                 "title" : "${{ github.repository }} 배포 성공",
-                 "text": "👤 머지한 사람: ${{ github.actor }}\n✅ 빌드 + 테스트 성공!",
-                 "color" : "green"
+                 "text": "✅ 테스트 성공!",
+                 "attachments": [
+                   {
+                      "title" : "${{ github.repository }} 테스트 성공",
+                      "text" : "👤 머지한 사람: ${{ github.actor }}\n브랜치: ${{ github.base_ref }}",
+                      "color" : "green"
+                   }
+                 ]
                }' \
                "${{ secrets.DOORAY_WEBHOOK_URL }}"
 
@@ -56,9 +61,14 @@ jobs:
                -X POST \
                -d '{
                  "botName": "wannab bot",
-                  "title" : "${{ github.repository }} 배포 실패",
-                 "text": "👤 머지한 사람: ${{ github.actor }}\n❌ 빌드 또는 테스트 실패...",
-                  "color" : "red"
+                 "text": "❌ 테스트 실패...",
+                 "attachments": [
+                   {
+                      "title" : "${{ github.repository }} 테스트 실패",
+                      "text" : "👤 머지한 사람: ${{ github.actor }}\n브랜치: ${{ github.base_ref }}",
+                      "color" : "red"
+                   }
+                 ]
                }' \
                "${{ secrets.DOORAY_WEBHOOK_URL }}"
 
