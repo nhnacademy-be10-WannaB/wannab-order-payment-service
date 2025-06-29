@@ -18,11 +18,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Cancel {
     @Id
-    private Long id;
+    private String id;
 
     @OneToOne
     @MapsId
-    @JoinColumn(name = "payment_key")
+    @JoinColumn(name = "id")
     private Payment payment;
 
     @NotNull
