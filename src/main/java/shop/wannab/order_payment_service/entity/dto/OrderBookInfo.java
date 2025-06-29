@@ -8,9 +8,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class OrderBookInfo {
-    private long id;
+    private long bookId;
     private String title;
     private int originPrice;
     private int salesPrice;
     private int quantity;
+    private String thumbnailUrl;
 }

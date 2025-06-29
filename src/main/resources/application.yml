@@ -1,8 +1,0 @@
-server:
-  port: 8081
-
-spring:
-  application:
-    name: order-payment-service
-  config:
-    import: "optional:configserver:http://config-server:10394/"

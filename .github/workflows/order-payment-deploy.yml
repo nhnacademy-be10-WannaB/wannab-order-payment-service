@@ -23,7 +23,14 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn clean package -Dspring.profiles.active=prod
+        run: |
+          if [ -f src/main/resources/application-ci.yml ]; then
+            mvn clean package \
+              -Dspring.profiles.active=ci \
+              -Dspring.config.import=optional:classpath:/application-ci.yml
+            else
+              mvn clean package
+            fi
 
       - name: Docker Login
         uses: docker/login-action@v3

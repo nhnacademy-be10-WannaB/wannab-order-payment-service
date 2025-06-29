@@ -1,5 +1,6 @@
 package shop.wannab.order_payment_service.entity.dto;
 
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,6 +10,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class OrderResponse {
     private final Long orderId; //주문번호
-    private final ZonedDateTime orderAt; //주문일시
+    private final LocalDateTime orderAt; //주문일시
     private final int totalPrice; //주문금액(결제금액)
 }

@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: order-payment-service
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: secret
+    password: secret
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  data:
+    redis:
+      host: 111.11.111.11
+      port: 6666
+      password: secret
+      database: 111
+  rabbitmq:
+    host: 111.11.111.11
+    port: 1111
+    username: secret
+    password: secret
+
+server:
+  port: 10392
+  shutdown: graceful
+
+management:
+  health:
+    rabbit:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+toss:
+  payments:
+    secretKey: secret
+
+# Book
+book:
+  api:
+    url: http://localhost:10390
+
+# Coupon
+coupon:
+  api:
+    url: http://localhost:10388
+
+# User
+user:
+  api:
+    url: http://localhost:10386
