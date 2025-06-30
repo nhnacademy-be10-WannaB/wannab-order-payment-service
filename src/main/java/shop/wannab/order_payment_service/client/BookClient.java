@@ -9,7 +9,7 @@ import shop.wannab.order_payment_service.entity.dto.BookIdTitlePriceListDto;
 import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
 import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
 
-@FeignClient(name = "wannab-book-service")
+@FeignClient(name = "book-service")
 public interface BookClient {
 
     @PostMapping("/api/books/validation/primary")

@@ -7,7 +7,7 @@ import shop.wannab.order_payment_service.entity.dto.PointProcessRequest;
 
 import java.util.List;
 
-@FeignClient(name = "wannab-user-service")
+@FeignClient(name = "user-service")
 public interface UserClient {
     @GetMapping("/api/users/{user-id}/points")
     int getUserPoints(@PathVariable("user-id") Long userId, @RequestHeader("X-USER-ID") Long headerUserId);
