@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Objects;
+
 
 @Entity
 @Getter
@@ -35,7 +37,7 @@ public class OrderBook {
     private int bookPrice;
 
     @Column(name = "wp_price")
-    private int wrappingPrice;
+    private int wrappingPrice = 0;
 
 
     @NotNull
@@ -53,4 +55,15 @@ public class OrderBook {
     @JoinColumn(name = "wp_id")
     private WrappingPaper wrappingPaper;
 
+    public OrderBook(Order order, long bookId, WrappingPaper wrappingPaper, int quantity, int pricePerBook) {
+        this.order = order;
+        this.bookId = bookId;
+        this.wrappingPaper = wrappingPaper;
+        this.quantity = quantity;
+        this.bookPrice = pricePerBook;
+        if (Objects.nonNull(this.wrappingPaper)) {
+            this.wrappingPrice = wrappingPaper.getPrice();
+        }
+
+    }
 }

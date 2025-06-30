@@ -1,10 +1,13 @@
 package shop.wannab.order_payment_service.service;
 
-import io.micrometer.common.util.StringUtils;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,25 +15,18 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.BookClient;
+import shop.wannab.order_payment_service.client.CouponClient;
 import shop.wannab.order_payment_service.client.UserClient;
-import shop.wannab.order_payment_service.entity.CartItem;
-import shop.wannab.order_payment_service.entity.DeliveryPolicy;
-import shop.wannab.order_payment_service.entity.Guest;
-import shop.wannab.order_payment_service.entity.Order;
-import shop.wannab.order_payment_service.entity.OrderBook;
-import shop.wannab.order_payment_service.entity.OrderStatus;
-import shop.wannab.order_payment_service.entity.RefundReason;
-import shop.wannab.order_payment_service.entity.WrappingPaper;
+import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
-import java.util.List;
-import shop.wannab.order_payment_service.exception.WrappingPaperNotFoundException;
 import shop.wannab.order_payment_service.repository.GuestRepository;
 import shop.wannab.order_payment_service.repository.OrderBookRepository;
 import shop.wannab.order_payment_service.repository.OrderReopsitory;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -38,12 +34,13 @@ public class OrderService {
     private final UserClient userClient;
     private final BookClient bookClient;
     private final WrappingPaperService wrappingPaperService;
+    private final CouponClient couponClient;
 
     private final OrderReopsitory orderReopsitory;
     private final GuestRepository guestRepository;
     private final OrderBookRepository orderBookRepository;
     private final WrappingPaperRepository wrappingPaperRepository;
-    private final OrderEmailHelper emailHelper;
+    private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
         OrderBookInfoListDto orderBookInfos = bookClient.getOrderBookInfos(orderItemListDto);
@@ -52,166 +49,263 @@ public class OrderService {
         int userPoints = 0;
         List<UserAddressResponse> userAddresses = List.of();
 
+        List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
+
         if (userId > 0) {
             userPoints = userClient.getUserPoints(userId, userId);
             userAddresses = userClient.getAllAddresses(userId, userId);
-        }
+            List<Long> bookIdList = orderBookInfos.getOrderBookInfos().stream().map(OrderBookInfo::getBookId).toList();
 
-        List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
-        //TODO: coupon 정보 추후에 추가
-        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints);
+            ApplicableCouponsDto applicableCouponsDto = couponClient.getApplicableCoupons(userId, new OrderCouponsRequestDto(bookIdList)).getBody();
+
+            for (OrderBookInfo orderBookInfo : orderBookInfos.getOrderBookInfos()) {
+                long bookId = orderBookInfo.getBookId();
+                Map<Long, List<BookCouponDto>> bookIdCouponsMap = applicableCouponsDto.getItemCoupons();
+                List<BookCouponDto> bookApplicableCoupons = bookIdCouponsMap.get(bookId);
+                orderBookInfo.setApplicableCoupons(bookApplicableCoupons);
+
+            }
+            return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, applicableCouponsDto.getOrderCoupons());
+        }
+        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of());
+
     }
 
-    public int getTotalBookPrice(OrderBookInfoListDto orderBookInfoListDto) {
-        int sum = 0;
-        List<OrderBookInfo> bookInfos = orderBookInfoListDto.getOrderBookInfos();
-        for (OrderBookInfo bookInfo : bookInfos) {
-            sum += bookInfo.getSalesPrice() * bookInfo.getQuantity();
+    //주문생성
+    @Transactional
+    public OrderInfoForPayment createOrder(OrderSubmitDto orderSubmitDto, Long userId) {
+        //------- 재고 2차 검증 -------//
+        List<BookOrderSubmitDto> bookList = orderSubmitDto.getBookOrderSubmitDtos();
+        List<CartItem> itemList = bookList.stream()
+                .map(req -> new CartItem(req.getBookId(), req.getBookQuantity())).toList();
+
+        OrderItemListDto itemListDto = new OrderItemListDto(itemList);
+        bookClient.validateOrderItems(itemListDto);
+
+        //------- 검증 끝-------//
+        bookClient.decreaseStock(itemListDto);
+
+        List<Long> bookIds = orderSubmitDto.getBookOrderSubmitDtos().stream().map(BookOrderSubmitDto::getBookId).toList();
+        BookIdTitlePriceListDto bookSimpleInfos = bookClient.getBookSimpleInfos(new BookIdListDto(bookIds));
+
+        Map<Long, Integer> bookIdPriceMap = bookSimpleInfos.getIdTitlePriceDtos().stream()
+                .collect(Collectors.toMap(
+                        BookIdTitlePriceDto::getBookId,
+                        BookIdTitlePriceDto::getSalesPrice
+                ));
+
+        //------- Orders table record add -------//
+        int totalBookPrice = getTotalBookPrice(bookSimpleInfos, orderSubmitDto.getBookOrderSubmitDtos());
+        int totalDiscountAmount = getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
+        int shippingFee = getShippingFee(totalBookPrice);
+        int totalWrappingPaperPrice = getTotalWrappingPaperPrice(orderSubmitDto);
+        String orderName = createOrderName(bookSimpleInfos.getIdTitlePriceDtos().get(0).getTitle(), bookIds.size());
+        Order order = new Order(userId,
+                orderName,
+                getShippingDate(),
+                orderSubmitDto.getDeliveryRequestAt(),
+                totalBookPrice, totalDiscountAmount,
+                shippingFee,
+                totalWrappingPaperPrice,
+                orderSubmitDto.getRecipientName(),
+                orderSubmitDto.getEmail(),
+                orderSubmitDto.getRecipientPhoneNumber(),
+                orderSubmitDto.getRecipientAddress());
+
+        order = orderReopsitory.save(order);
+
+        //------- Order_book table record add -------//
+        List<OrderBook> orderBooks = new ArrayList<>();
+        for (BookOrderSubmitDto bookOrderSubmitDto : orderSubmitDto.getBookOrderSubmitDtos()) {
+            WrappingPaper wrappingPaper = null;
+            if (Objects.nonNull(bookOrderSubmitDto.getWrappingPaperId())) {
+                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("존재하지 않는 포장지 아이디"));
+            }
+            OrderBook orderBook = new OrderBook(order, bookOrderSubmitDto.getBookId(), wrappingPaper, bookOrderSubmitDto.getBookQuantity(), bookIdPriceMap.get(bookOrderSubmitDto.getBookId()));
+            orderBooks.add(orderBook);
         }
+        orderBookRepository.saveAll(orderBooks);
+
+        if (userId > 0) { //회원일시
+            try {//TODO: rabbitmq 적용
+                userClient.processPoints(new PointProcessRequest(userId, order.getId(), orderSubmitDto.getUsedPoints(), order.getTotalPrice()));
+
+            } catch (RuntimeException e) {
+            //log.warn("포인트 적립 실패: userId={}, orderId={}", userId, orderId);
+            }
+        } else { //비회원일시
+            Guest guest = new Guest(orderSubmitDto.getGuestPassword(), order);
+            guestRepository.save(guest);
+        }
+
+        try {
+            orderEmailHelper.sendOrderEmail(order, orderSubmitDto.getEmail(), orderSubmitDto.getRecipientAddress(), orderSubmitDto.getRecipientName());
+        } catch (RuntimeException e) {
+            log.info("이메일 전송실패");
+        }
+        int payAmount = order.getTotalPrice();
+
+        OrderInfoForPayment orderInfoForPayment = new OrderInfoForPayment(order.getId(), orderName, payAmount);
+        return orderInfoForPayment;
+    }
+
+    private int getTotalBookPrice(OrderBookInfoListDto orderBookInfoListDto) {
+        int totalBookPrice = 0;
+        List<OrderBookInfo> bookOrderSubmitDtos = orderBookInfoListDto.getOrderBookInfos();
+        for (OrderBookInfo dto : bookOrderSubmitDtos) {
+            totalBookPrice += dto.getSalesPrice() * dto.getQuantity();
+        }
+        return totalBookPrice;
+    }
+
+    private int getTotalBookPrice(BookIdTitlePriceListDto orderBookInfoListDto, List<BookOrderSubmitDto> idQuantityEtcDto) {
+        int sum = 0;
+
+        Map<Long, Integer> bookIdToQuantityMap = idQuantityEtcDto.stream()
+        .collect(Collectors.toMap(
+            BookOrderSubmitDto::getBookId,
+            BookOrderSubmitDto::getBookQuantity
+        )); //TODO: 개선 여지 O
+
+        for (BookIdTitlePriceDto info : orderBookInfoListDto.getIdTitlePriceDtos()) {
+            long bookId = info.getBookId();
+            int quantity = bookIdToQuantityMap.get(bookId);
+            sum += info.getSalesPrice() * quantity;
+        }
+
         return sum;
     }
 
     //배송지 정책 계산
-    public int getShippingFee(int totalBookPrice) {
+    private int getShippingFee(int totalBookPrice) {
         DeliveryPolicy deliveryPolicy = deliveryPolicyService.findApplicablePolicy(totalBookPrice);
         int shippingFee = deliveryPolicy.getFee();
         return shippingFee;
     }
 
-
-    //주문생성
-    @Transactional
-    public OrderResponse createOrder(OrderRequest request, Long userId) {
-        Order order = new Order();
-        order.setOrderAt(LocalDateTime.now());
-        order.setDeliveryWant(request.getDeliveryWant());
-        order.setOrderStatus(OrderStatus.PENDING);
-        order = orderReopsitory.save(order);
-
-
-
-        List<OrderBookRequest> bookList = request.getBookList();
-        List<CartItem> itemList = bookList.stream()
-                .map(req -> new CartItem(req.getBookId(), req.getQuantity())).toList();
-
-        OrderItemListDto itemListDto = new OrderItemListDto(itemList);
-
-        bookClient.validateOrderItems(itemListDto);
-        OrderBookInfoListDto bookInfoList = bookClient.getOrderBookInfos(itemListDto);
-
-
-        int totalBookPrice = 0; // 도서합계
-        int totalWrappingPrice = 0; // 포장지 합계
-
-        for (OrderBookInfo bookInfo : bookInfoList.getOrderBookInfos()) {
-            OrderBookRequest match = bookList.stream()
-                    .filter(req -> req.getBookId().equals(bookInfo.getBookId()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("주문서 도서정보 누락"));
-
-            OrderBook orderBook = new OrderBook();
-            orderBook.setOrder(order);
-            orderBook.setBookId(bookInfo.getBookId());
-            orderBook.setBookPrice(bookInfo.getSalesPrice());
-            orderBook.setQuantity(bookInfo.getQuantity());
-
-            int wpPrice = 0;
-            WrappingPaper wp = null;
-            if(match.getSelectedWrappingId() != null){
-                wp = wrappingPaperRepository.findById(match.getSelectedWrappingId()).orElseThrow(()-> new WrappingPaperNotFoundException(match.getSelectedWrappingId()));
-                wpPrice = wp.getPrice();
+    private int getTotalWrappingPaperPrice(OrderSubmitDto submitDto) {
+        int totalWrappingPaperPrice = 0;
+        List<BookOrderSubmitDto> bookOrderSubmitDtos = submitDto.getBookOrderSubmitDtos();
+        for (BookOrderSubmitDto dto : bookOrderSubmitDtos) {
+            if (Objects.isNull(dto.getWrappingPaperId()) || dto.getWrappingPaperId() == 0L) {
+                continue;
             }
-            orderBook.setWrappingPaper(wp);
-            orderBook.setWrappingPrice(wpPrice);
-
-            orderBookRepository.save(orderBook);
-
-            totalBookPrice += bookInfo.getSalesPrice() * bookInfo.getQuantity();
-            totalWrappingPrice += wpPrice;
+            WrappingPaper wrappingPaper = wrappingPaperRepository.findById(dto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("잘못된 포장지 아이디"));
+            totalWrappingPaperPrice += wrappingPaper.getPrice();
         }
-
-        int deliveryFee = getShippingFee(totalBookPrice); //배송비
-        order.setTotalBookPrice(totalBookPrice);
-        order.setTotalWrappingPrice(totalWrappingPrice);
-        order.setDeliveryFee(deliveryFee);
-
-
-        if (userId > 0) { //회원일시
-            int totalDiscount = request.getUsedPoint(); // TODO: 쿠폰 할인 추가
-            userClient.usePoint(userId, userId, request.getUsedPoint()); // 사용한 포인트
-            order.setUserId(userId);
-            order.setAddressId(request.getAddressId());
-            order.setTotalDiscount(totalDiscount);
-
-            // 이메일 발송
-            emailHelper.sendMemberOrderEmail(userId, order, request.getAddressId());
-
-        } else { //비회원일시
-            if (StringUtils.isBlank(request.getName()) ||
-                    StringUtils.isBlank(request.getEmail()) ||
-                    StringUtils.isBlank(request.getPhone()) ||
-                    StringUtils.isBlank(request.getPassword()) ||
-                    StringUtils.isBlank(request.getAddress())) {
-                throw new IllegalArgumentException("비회원 주문시 모든항목 입력 필수");
-            }
-
-            order.setTotalDiscount(0); // 쿠폰, 포인트 사용불가
-
-            Guest guest = new Guest();
-            guest.setName(request.getName());
-            guest.setEmail(request.getEmail());
-            guest.setPhone(request.getPhone());
-            guest.setPassword(request.getPassword());
-            guest.setAddress(request.getAddress());
-            guest.setOrder(order);
-            guestRepository.save(guest);
-
-            //이메일 발송
-            emailHelper.sendGuestOrderEmail(guest, order);
-        }
-
-        orderReopsitory.save(order);
-
-        return new OrderResponse(order.getId(), order.getOrderAt(), order.getTotalPrice());
+        return totalWrappingPaperPrice;
     }
 
+    private LocalDateTime getShippingDate() { //출고일 정책
+        LocalDateTime now = LocalDateTime.now();
+
+        // 15시 이후면 다음 날로
+        if (now.toLocalTime().isAfter(LocalTime.of(15, 0))) {
+            now = now.plusDays(1);
+        }
+
+        LocalDate date = now.toLocalDate();
+
+        // 주말이면 월요일까지 이동
+        while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
+               date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            now = date.plusDays(1).atStartOfDay();
+        }
+        return now;
+    }
+
+    private String createOrderName(String oneOfBookTitle, int orderItemCount) {
+        if (orderItemCount > 1) {
+            return String.format("%s 주문", oneOfBookTitle);
+        }
+        return String.format("%s외 %d권 주문", oneOfBookTitle, orderItemCount);
+    }
+
+    private int getTotalDiscountAmount(Long userId, OrderSubmitDto dto, BookIdTitlePriceListDto bookIdTitlePriceListDto, int totalBookPrice) {
+        int totalDiscountAmount = 0;
+        List<BookOrderSubmitDto> bookOrderSubmitDtos = dto.getBookOrderSubmitDtos();
+        //책에 적용한 쿠폰의 할인정보 받아오는 로직//
+        Map<Long, Long> couponIdBookIdMap = new HashMap<>();
+        for (BookOrderSubmitDto bookDto : bookOrderSubmitDtos) {
+            couponIdBookIdMap.put(bookDto.getAppliedCouponId(), bookDto.getBookId());
+        }
+
+        if (Objects.nonNull(dto.getAppliedOrderCouponId())) {
+            couponIdBookIdMap.put(dto.getAppliedOrderCouponId(), null); //주문에 적용할 쿠폰아이디
+        }
+
+        List<TryApplyCouponsResponseDto> couponDiscountInfos = couponClient.getApplyCoupons(userId, new TryApplyCouponsRequestDto(couponIdBookIdMap)).getBody();//여기서 책아이디:가격 맵 생성
+        Map<Long, Integer> bookIdPriceMap = new HashMap<>();
+        for (BookIdTitlePriceDto idTitlePriceDto : bookIdTitlePriceListDto.getIdTitlePriceDtos()) {
+            bookIdPriceMap.put(idTitlePriceDto.getBookId(), idTitlePriceDto.getSalesPrice());
+        }
+        //책에 적용할 쿠폰 할인가 합산
+        for (TryApplyCouponsResponseDto discountInfo : couponDiscountInfos) {
+            Long bookId = discountInfo.getBookId();
+            if (Objects.nonNull(bookId)) {//책 각각에 적용
+                Integer bookPrice = bookIdPriceMap.get(bookId);
+                if (discountInfo.getDiscountType().equals(DiscountType.FIXED)) {
+                    totalDiscountAmount += discountInfo.getDiscountValue();
+                } else {
+                    totalDiscountAmount += (bookPrice * ((double)discountInfo.getDiscountValue() / 100));
+                }
+
+            } else { //totalBookPrice에 적용
+                if (!Objects.equals(dto.getAppliedOrderCouponId(), discountInfo.getCouponId())) { //early exit
+                    continue;
+                }
+                if (discountInfo.getDiscountType().equals(DiscountType.FIXED)) {
+                    totalDiscountAmount += discountInfo.getDiscountValue();
+                } else {
+                    totalDiscountAmount += (double) totalBookPrice * discountInfo.getDiscountValue() / 100;
+                }
+            }
+        }
+        if (Objects.nonNull(dto.getUserId()) && !dto.getUserId().isBlank()) {
+            totalDiscountAmount += dto.getUsedPoints();
+        }
+
+        return totalDiscountAmount;
+    }
 
     //주문목록조회 (회원)
     @Transactional(readOnly = true)
-    public Page<OrderListResponse> getOrdersByUser(Long userId, int page, int size) {
+    public Page<OrderLookupResponse> getOrdersByUser(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
         return orderReopsitory.findAllByUserId(userId, pageable)
-                .map(order -> new OrderListResponse(
+                .map(order -> new OrderLookupResponse(
                         order.getId(),
+                        order.getOrderName(),
                         order.getOrderAt(),
                         order.getOrderStatus(),
-                        order.getDeliveryAt(),
+                        order.getShippedAt(),
                         order.getTotalPrice()
                 ));
     }
 
     // 쇼핑몰 주문 전체 조회 (관리자용)
     @Transactional(readOnly = true)
-    public Page<OrderListResponse> getOrders(Long userId, int page, int size) {
+    public Page<OrderLookupResponse> getOrders(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
-        // ADMIN 확인
-        String role = userClient.getUserRole(userId);
-
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
-        }
+//        // ADMIN 확인
+//        String role = userClient.getUserRole(userId);
+//
+//        if (!"ADMIN".equalsIgnoreCase(role)) {
+//            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
+//        }
 
         // 주문자 id나 이름도 띄우면 좋을듯
         // -> 비회원이면 이메일 띄우고
 
         return orderReopsitory.findAll(pageable)
-                .map(order -> new OrderListResponse(
+                .map(order -> new OrderLookupResponse(
                         order.getId(),
+                        order.getOrderName(),
                         order.getOrderAt(), //주문일시
                         order.getOrderStatus(), //주문상태
-                        order.getDeliveryAt(), // 배송일(또는 null)
+                        order.getShippedAt(), // 배송일(또는 null)
                         order.getTotalPrice() //최종 결제금액
                 ));
     }
@@ -308,7 +402,7 @@ public class OrderService {
 
         //포인트반환 로직추가(회원인 경우만)
         if (userId != null && userId > 0) {
-            int refundPoint = order.getTotalPrice() + order.getTotalDiscount(); //주문전 취소라 모든 금액을 돌려줌
+            int refundPoint = order.getTotalPrice() + order.getTotalDiscountAmount(); //주문전 취소라 모든 금액을 돌려줌
             userClient.refundPoint(userId, userId, refundPoint);
         }
 
@@ -344,17 +438,17 @@ public class OrderService {
     public void updateStatus(Long userId, Long orderId, OrderStatus newStatus){
         Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
 
-        // ADMIN 확인
-        String role = userClient.getUserRole(userId);
-
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
-        }
+//        // ADMIN 확인
+//        String role = userClient.getUserRole(userId);
+//
+//        if (!"ADMIN".equalsIgnoreCase(role)) {
+//            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
+//        }
 
         order.setOrderStatus(newStatus);
 
         if(newStatus.equals(OrderStatus.SHIPPING)){
-            order.setDeliveryAt(LocalDateTime.now());
+            order.setShippedAt(LocalDateTime.now());
         }
     }
 
@@ -378,19 +472,19 @@ public class OrderService {
         }
 
 
-        LocalDateTime deliveryAt = order.getDeliveryAt(); // 출고일
+        LocalDateTime deliveryAt = order.getShippedAt(); // 출고일
         int refundPoint = 0;
 
         if(reason.equals(RefundReason.DAMAGED)){
             if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
-            refundPoint = order.getTotalPrice() + order.getTotalDiscount(); //제품불량은 전부 환불
+            refundPoint = order.getTotalPrice() + order.getTotalDiscountAmount(); //제품불량은 전부 환불
         }else if(reason.equals(RefundReason.JUST)){
             if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
-            refundPoint = order.getTotalBookPrice() + order.getTotalDiscount(); //배송비 제외 환불
+            refundPoint = order.getTotalBookPrice() + order.getTotalDiscountAmount(); //배송비 제외 환불
 
         }
 
@@ -421,23 +515,18 @@ public class OrderService {
             throw new IllegalStateException("현재 상태에서는 반품할 수 없습니다.");
         }
 
-        LocalDateTime deliveryAt = order.getDeliveryAt(); //출고일
+        LocalDateTime shippedAt = order.getShippedAt(); //출고일
 
         if(reason.equals(RefundReason.DAMAGED)){
-            if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDateTime.now())) {
+            if (shippedAt == null || shippedAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
         }else if(reason.equals(RefundReason.JUST)){
-            if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDateTime.now())) {
+            if(shippedAt == null || shippedAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
         }
         order.setOrderStatus(OrderStatus.RETURNED);
     }
-
-
-
-
-
 
 }
