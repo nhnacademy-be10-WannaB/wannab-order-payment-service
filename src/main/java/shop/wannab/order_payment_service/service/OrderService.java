@@ -406,7 +406,9 @@ public class OrderService {
 
         increaseBookStock(order);
 
-        // TODO : 주문 아이디,취소 금액
+        int cancelMoney = order.getTotalPrice();
+
+        paymentService.paymentCancel(orderId, cancelMoney);
     }
 
 
@@ -430,7 +432,9 @@ public class OrderService {
         order.setOrderStatus(OrderStatus.CANCELLED);
         increaseBookStock(order);
 
-        // TODO : 주문 아이디,취소 금액
+        int cancelMoney = order.getTotalPrice();
+
+        paymentService.paymentCancel(orderId, cancelMoney);
 
     }
 
@@ -525,26 +529,30 @@ public class OrderService {
             throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
         }
 
+        int refundMoney = 0;
+
         // 반품 가능 상태 확인 (예: 배송완료 상태만 반품 허용)
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
             throw new IllegalStateException("현재 상태에서는 반품할 수 없습니다.");
         }
-
         LocalDateTime shippedAt = order.getShippedAt(); //출고일
 
         if(reason.equals(RefundReason.DAMAGED)){
             if (shippedAt == null || shippedAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
+            refundMoney = order.getTotalPrice(); //제품불량은 전부 환불
         }else if(reason.equals(RefundReason.JUST)){
             if(shippedAt == null || shippedAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
+            refundMoney = order.getTotalBookPrice(); //단순변심은 배송비제외
         }
         order.setOrderStatus(OrderStatus.RETURNED);
         increaseBookStock(order);
 
-        // TODO : 주문 아이디,취소 금액
+
+        paymentService.paymentCancel(orderId, refundMoney);
 
     }
 
