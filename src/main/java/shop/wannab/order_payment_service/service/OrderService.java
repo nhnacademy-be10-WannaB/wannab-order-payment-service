@@ -446,6 +446,10 @@ public class OrderService {
         }
 
         order.setOrderStatus(newStatus);
+
+        if(newStatus.equals(OrderStatus.SHIPPING)){
+            order.setDeliveryAt(LocalDateTime.now());
+        }
     }
 
 
