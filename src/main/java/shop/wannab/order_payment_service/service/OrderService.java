@@ -405,7 +405,8 @@ public class OrderService {
         order.setOrderStatus(OrderStatus.CANCELLED);
 
         increaseBookStock(order);
-        //결제취소사유, 주문아이디
+
+        // TODO : 주문 아이디,취소 금액
     }
 
 
@@ -428,6 +429,9 @@ public class OrderService {
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
         increaseBookStock(order);
+
+        // TODO : 주문 아이디,취소 금액
+
     }
 
     private void increaseBookStock(Order order) {
@@ -539,6 +543,9 @@ public class OrderService {
         }
         order.setOrderStatus(OrderStatus.RETURNED);
         increaseBookStock(order);
+
+        // TODO : 주문 아이디,취소 금액
+
     }
 
 }

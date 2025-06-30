@@ -6,6 +6,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,8 +30,5 @@ public class Cancel {
     private Integer cancelAmount;
 
     @NotNull
-    private String cancelReason;
-
-    @NotNull
-    private String cancelAt;
+    private LocalDateTime cancelAt;
 }
