@@ -196,7 +196,7 @@ public class OrderService {
         return totalWrappingPaperPrice;
     }
 
-    private LocalDate getShippingDate() { //출고일 정책
+    private LocalDateTime getShippingDate() { //출고일 정책
         LocalDateTime now = LocalDateTime.now();
 
         // 15시 이후면 다음 날로
@@ -209,9 +209,9 @@ public class OrderService {
         // 주말이면 월요일까지 이동
         while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
                date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            date = date.plusDays(1);
+            now = date.plusDays(1).atStartOfDay();
         }
-        return date;
+        return now;
     }
 
     private String createOrderName(String oneOfBookTitle, int orderItemCount) {
@@ -289,12 +289,12 @@ public class OrderService {
     public Page<OrderLookupResponse> getOrders(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
-        // ADMIN 확인
-        String role = userClient.getUserRole(userId);
-
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
-        }
+//        // ADMIN 확인
+//        String role = userClient.getUserRole(userId);
+//
+//        if (!"ADMIN".equalsIgnoreCase(role)) {
+//            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
+//        }
 
         // 주문자 id나 이름도 띄우면 좋을듯
         // -> 비회원이면 이메일 띄우고
@@ -438,17 +438,17 @@ public class OrderService {
     public void updateStatus(Long userId, Long orderId, OrderStatus newStatus){
         Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
 
-        // ADMIN 확인
-        String role = userClient.getUserRole(userId);
-
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
-        }
+//        // ADMIN 확인
+//        String role = userClient.getUserRole(userId);
+//
+//        if (!"ADMIN".equalsIgnoreCase(role)) {
+//            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
+//        }
 
         order.setOrderStatus(newStatus);
 
         if(newStatus.equals(OrderStatus.SHIPPING)){
-            order.setDeliveryAt(LocalDateTime.now());
+            order.setShippedAt(LocalDateTime.now());
         }
     }
 
@@ -472,16 +472,16 @@ public class OrderService {
         }
 
 
-        LocalDate deliveryAt = order.getShippedAt(); // 출고일
+        LocalDateTime deliveryAt = order.getShippedAt(); // 출고일
         int refundPoint = 0;
 
         if(reason.equals(RefundReason.DAMAGED)){
-            if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDate.now())) {
+            if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
             refundPoint = order.getTotalPrice() + order.getTotalDiscountAmount(); //제품불량은 전부 환불
         }else if(reason.equals(RefundReason.JUST)){
-            if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDate.now())) {
+            if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
             refundPoint = order.getTotalBookPrice() + order.getTotalDiscountAmount(); //배송비 제외 환불
@@ -515,14 +515,14 @@ public class OrderService {
             throw new IllegalStateException("현재 상태에서는 반품할 수 없습니다.");
         }
 
-        LocalDate deliveryAt = order.getShippedAt(); //출고일
+        LocalDateTime shippedAt = order.getShippedAt(); //출고일
 
         if(reason.equals(RefundReason.DAMAGED)){
-            if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDate.now())) {
+            if (shippedAt == null || shippedAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
         }else if(reason.equals(RefundReason.JUST)){
-            if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDate.now())) {
+            if(shippedAt == null || shippedAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
         }

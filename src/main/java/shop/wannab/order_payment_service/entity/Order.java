@@ -34,8 +34,9 @@ public class Order {
     @Column(name = "order_at")
     private LocalDateTime orderAt;
 
+    @Setter
     @Column(name = "shipped_at")
-    private LocalDate shippedAt;
+    private LocalDateTime shippedAt;
 
     @Column(name = "delivery_want")
     private LocalDate deliveryWant;
@@ -77,7 +78,7 @@ public class Order {
     private String recipientAddress;
 
 
-    public Order(Long userId, String orderName, LocalDate shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
+    public Order(Long userId, String orderName, LocalDateTime shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
         this.orderAt =  LocalDateTime.now();
         this.orderName = orderName;
         this.shippedAt = shippedAt;

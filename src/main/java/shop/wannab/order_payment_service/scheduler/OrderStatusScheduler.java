@@ -21,7 +21,7 @@ public class OrderStatusScheduler {
     @Transactional
     public void completeShippedOrders() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
-        List<Order> shippingOrders = orderReopsitory.findByOrderStatusAndDeliveryAtBefore(OrderStatus.SHIPPING, threshold);
+        List<Order> shippingOrders = orderReopsitory.findByOrderStatusAndShippedAtBefore(OrderStatus.SHIPPING, threshold);
 
         for (Order order : shippingOrders) {
             order.setOrderStatus(OrderStatus.COMPLETED);
