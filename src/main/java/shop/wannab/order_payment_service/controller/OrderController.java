@@ -73,7 +73,7 @@ public class OrderController {
     }
 
     //주문취소(결제취소) 회원
-    @PatchMapping("/{orderId}")
+    @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<Void> cancelOrder(@RequestHeader("X-User-Id") Long userId,
                                             @PathVariable Long orderId){
         orderService.cancelOrder(orderId, userId);
@@ -81,7 +81,7 @@ public class OrderController {
     }
 
     //주문취소(결제취소) 비회원
-    @PatchMapping("/guest")
+    @PatchMapping("/guest/cancel")
     public ResponseEntity<Void> cancelGuestOrder(@RequestParam Long orderId,
                                                  @RequestParam String password){
         orderService.cancelGuestOrder(orderId, password);

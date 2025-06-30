@@ -23,5 +23,8 @@ public interface BookClient {
 
     @PostMapping("/decrease-stock")
     ResponseEntity<Void> decreaseStock(@RequestBody OrderItemListDto orderItemListDto);
+
+    @PostMapping("/increase-stock")
+    ResponseEntity<Void> increaseStock(@RequestBody OrderItemListDto orderItemListDto);
 }
 
