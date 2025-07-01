@@ -9,12 +9,11 @@ import java.util.List;
 
 @FeignClient(name = "user-service")
 public interface UserClient {
-    @GetMapping("/api/users/{user-id}/points")
-    int getUserPoints(@PathVariable("user-id") Long userId, @RequestHeader("X-USER-ID") Long headerUserId);
+    @GetMapping("/api/users/points")
+    int getUserPoints(@RequestHeader("X-USER-ID") Long headerUserId);
 
-    @GetMapping("/api/users/{user-id}/addresses")
-    List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId,
-                                              @PathVariable("user-id") Long userId);
+    @GetMapping("/api/users/addresses")
+    List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId);
 
     @PostMapping("/api/users/points/process")
     void processPoints(@RequestBody PointProcessRequest pointProcessRequest);
@@ -23,16 +22,15 @@ public interface UserClient {
     void cancleOrderPointProcess(@PathVariable("order-id") Long orderId);
 
     //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
-    @PatchMapping("/api/users/{user-id}/points/refund")
+    @PatchMapping("/api/users/points/refund")
     void refundPoint(@RequestHeader("X-USER-ID") Long headerUserId,
-                     @PathVariable("user-id") Long userId,
                      @RequestParam("amount") int refundPoint);
 
-    // 이메일 (보류)
-    @GetMapping("/api/users/{user-id}/email")
-    String getUserEmail(@PathVariable("user-id") Long userId);
-
-    //유저역할 (보류)
-    @GetMapping("/users/{userId}/role")
-    String getUserRole(@PathVariable("user-id") Long userId);
+//    // 이메일 (보류)
+//    @GetMapping("/api/users/{user-id}/email")
+//    String getUserEmail(@PathVariable("user-id") Long userId);
+//
+//    //유저역할 (보류)
+//    @GetMapping("/users/{userId}/role")
+//    String getUserRole(@PathVariable("user-id") Long userId);
 }
