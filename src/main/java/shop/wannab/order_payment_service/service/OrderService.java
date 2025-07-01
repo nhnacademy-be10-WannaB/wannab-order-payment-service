@@ -53,8 +53,8 @@ public class OrderService {
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
 
         if (userId > 0) {
-            userPoints = userClient.getUserPoints(userId, userId);
-            userAddresses = userClient.getAllAddresses(userId, userId);
+            userPoints = userClient.getUserPoints(userId);
+            userAddresses = userClient.getAllAddresses(userId);
             List<Long> bookIdList = orderBookInfos.getOrderBookInfos().stream().map(OrderBookInfo::getBookId).toList();
 
             ApplicableCouponsDto applicableCouponsDto = couponClient.getApplicableCoupons(userId, new OrderCouponsRequestDto(bookIdList)).getBody();
@@ -508,7 +508,7 @@ public class OrderService {
 
         //환불 포인트 값 보내주기
         if (refundPoint > 0) {
-            userClient.refundPoint(userId, userId, refundPoint);
+            userClient.refundPoint(userId, refundPoint);
         }
 
         // 상태 변경
