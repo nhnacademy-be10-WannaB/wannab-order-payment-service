@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static shop.wannab.order_payment_service.constants.Constants.GUEST_CART_TTL;
 
@@ -22,11 +23,14 @@ public class CartRedisRepository implements CartRepository {
     private static final String CART_KEY_PREFIX = "cart:";
 
     @Override
-    public List<CartItem> getCartItems(long userIdentifier) {
+    public List<CartItem> getCartItems(Long userIdentifier) {
+        List<CartItem> cartItems = new ArrayList<>();
+        if (Objects.isNull(userIdentifier)) {
+            return cartItems;
+        }
         String cartKey = CART_KEY_PREFIX + userIdentifier;
         Map<Long, Integer> cartBooks = redisTemplate.<Long, Integer>opsForHash().entries(cartKey); //key: bookId, value: quantity
 
-        List<CartItem> cartItems = new ArrayList<>();
         for (Map.Entry<Long, Integer> entry : cartBooks.entrySet()) {
             CartItem item = new CartItem(entry.getKey(), entry.getValue());
             cartItems.add(item);
@@ -35,25 +39,25 @@ public class CartRedisRepository implements CartRepository {
     }
 
     @Override
-    public void addItemToCart(long userIdentifier, long bookId) {
+    public void addItemToCart(Long userIdentifier, long bookId) {
         String cartKey = CART_KEY_PREFIX + userIdentifier;
         redisTemplate.opsForHash().increment(cartKey, bookId, 1);
     }
 
     @Override
-    public void updateItemQuantity(long userIdentifier, long bookId, int quantity) {
+    public void updateItemQuantity(Long userIdentifier, long bookId, int quantity) {
         String cartKey = CART_KEY_PREFIX + userIdentifier;
         redisTemplate.opsForHash().put(cartKey, bookId, quantity);
     }
 
     @Override
-    public void removeItemFromCart(long userIdentifier, long bookId) {
+    public void removeItemFromCart(Long userIdentifier, long bookId) {
         String cartKey = CART_KEY_PREFIX + userIdentifier;
         redisTemplate.opsForHash().delete(cartKey, bookId);
     }
 
     @Override
-    public void createCart(long userIdentifier) {
+    public void createCart(Long userIdentifier) {
         String cartKey;
         if (isGuest(userIdentifier)) {
             String guest = "guest:" + userIdentifier;
