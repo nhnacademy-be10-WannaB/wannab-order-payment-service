@@ -11,6 +11,8 @@ import shop.wannab.order_payment_service.entity.RefundReason;
 import shop.wannab.order_payment_service.entity.dto.*;
 import shop.wannab.order_payment_service.service.OrderService;
 
+import java.util.Objects;
+
 
 @RestController
 @RequestMapping("/api")
@@ -20,20 +22,26 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader("X-USER-ID") Long userId, @RequestBody OrderItemListDto orderItemListDto) {
+    public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
         try {
             bookClient.validateOrderItems(orderItemListDto);
         } catch (FeignException.BadRequest e) {
             throw e;
         }
-        return orderService.createOrderPageRequestDto(userId, orderItemListDto);
+        if (Objects.nonNull(userId)) {
+            return orderService.createOrderPageRequestDto(userId, orderItemListDto);
+        }
+        return orderService.createOrderPageRequestDto(guestId, orderItemListDto);
+
     }
 
 
     @PostMapping("/orders/new")
-    OrderInfoForPayment processOrder(@RequestHeader("X-USER-ID") Long userId, @RequestBody OrderSubmitDto orderSubmitDto) {
-        OrderInfoForPayment response = orderService.createOrder(orderSubmitDto, userId);
-        return response;
+    OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody Long guestId, @RequestBody OrderSubmitDto orderSubmitDto) {
+        if (Objects.nonNull(userId)) {
+            return orderService.createOrder(orderSubmitDto, userId);
+        }
+        return orderService.createOrder(orderSubmitDto, guestId);
     }
 
 
@@ -73,7 +81,7 @@ public class OrderController {
     }
 
     //주문취소(결제취소) 회원
-    @PatchMapping("/orders/{orderId}/cancel")
+    @PostMapping("/orders/{orderId}/cancel")
     public ResponseEntity<Void> cancelOrder(@RequestHeader("X-USER-ID") Long userId,
                                             @PathVariable Long orderId){
         orderService.cancelOrder(orderId, userId);
@@ -81,7 +89,7 @@ public class OrderController {
     }
 
     //주문취소(결제취소) 비회원
-    @PatchMapping("/orders/guest/cancel")
+    @PostMapping("/orders/guest/cancel")
     public ResponseEntity<Void> cancelGuestOrder(@RequestParam Long orderId,
                                                  @RequestParam String password){
         orderService.cancelGuestOrder(orderId, password);
@@ -89,7 +97,7 @@ public class OrderController {
     }
 
     //주문상태변경 (관리자)
-    @PatchMapping("/admin//orders/{orderId}")
+    @PostMapping("/admin/orders/{orderId}")
     public ResponseEntity<Void> updateStatus(@RequestHeader("X-USER-ID") Long userId,
                                              @PathVariable Long orderId,
                                              @RequestParam OrderStatus newStatus){
@@ -98,7 +106,7 @@ public class OrderController {
     }
 
     //반품(회원)
-    @PatchMapping("/orders/{orderId}/refund")
+    @PostMapping("/orders/{orderId}/refund")
     public ResponseEntity<Void> refundOrder(@RequestHeader("X-USER-ID") Long userId,
                                             @PathVariable Long orderId,
                                             @RequestParam RefundReason reason){   //reason은 스크롤로 (제품불량, 단순변심)
@@ -107,7 +115,7 @@ public class OrderController {
     }
 
     //반품(비회원)
-    @PatchMapping("/orders/guest/refund")
+    @PostMapping("/orders/guest/refund")
     public ResponseEntity<Void> refundGuestOrder(@RequestParam Long orderId,
                                                  @RequestParam String password,
                                                  @RequestParam RefundReason reason){

@@ -5,14 +5,14 @@ import shop.wannab.order_payment_service.entity.CartItem;
 import java.util.List;
 
 public interface CartRepository {
-    List<CartItem> getCartItems(long userIdentifier);
+    List<CartItem> getCartItems(Long userIdentifier);
 
-    void addItemToCart(long userIdentifier, long bookId);
+    void addItemToCart(Long userIdentifier, long bookId);
 
-    void updateItemQuantity(long userIdentifier, long bookId, int quantity);
+    void updateItemQuantity(Long userIdentifier, long bookId, int quantity);
 
-    void removeItemFromCart(long userIdentifier, long bookId);
+    void removeItemFromCart(Long userIdentifier, long bookId);
 
-    void createCart(long userIdentifier);
+    void createCart(Long userIdentifier);
 
 }

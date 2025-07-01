@@ -15,4 +15,5 @@ public class OrderPageRequestDto {
     private int shippingFee;
     private int userPoints;
     private List<OrderCouponDto> orderCoupons;
+    private long customerId;
 }
