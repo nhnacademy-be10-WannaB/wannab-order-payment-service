@@ -34,6 +34,7 @@ public class OrderService {
     private final UserClient userClient;
     private final BookClient bookClient;
     private final WrappingPaperService wrappingPaperService;
+    private final PaymentService paymentService;
     private final CouponClient couponClient;
 
     private final OrderReopsitory orderReopsitory;
@@ -52,8 +53,8 @@ public class OrderService {
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
 
         if (userId > 0) {
-            userPoints = userClient.getUserPoints(userId, userId);
-            userAddresses = userClient.getAllAddresses(userId, userId);
+            userPoints = userClient.getUserPoints(userId);
+            userAddresses = userClient.getAllAddresses(userId);
             List<Long> bookIdList = orderBookInfos.getOrderBookInfos().stream().map(OrderBookInfo::getBookId).toList();
 
             ApplicableCouponsDto applicableCouponsDto = couponClient.getApplicableCoupons(userId, new OrderCouponsRequestDto(bookIdList)).getBody();
@@ -65,9 +66,9 @@ public class OrderService {
                 orderBookInfo.setApplicableCoupons(bookApplicableCoupons);
 
             }
-            return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, applicableCouponsDto.getOrderCoupons());
+            return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, applicableCouponsDto.getOrderCoupons(), userId);
         }
-        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of());
+        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of(), userId);
 
     }
 
@@ -394,20 +395,22 @@ public class OrderService {
             throw new IllegalArgumentException("본인 주문만 취소가능");
         }
 
-
         // PENDING(대기)에서만 취소가능
         if (order.getOrderStatus() != OrderStatus.PENDING) {
             throw new IllegalStateException("현재 주문 상태에서는 취소할 수 없습니다: " + order.getOrderStatus());
         }
 
-        //포인트반환 로직추가(회원인 경우만)
-        if (userId != null && userId > 0) {
-            int refundPoint = order.getTotalPrice() + order.getTotalDiscountAmount(); //주문전 취소라 모든 금액을 돌려줌
-            userClient.refundPoint(userId, userId, refundPoint);
-        }
+        userClient.cancleOrderPointProcess(order.getId());
 
         order.setOrderStatus(OrderStatus.CANCELLED);
+
+        increaseBookStock(order);
+
+        int cancelMoney = order.getTotalPrice();
+
+        paymentService.paymentCancel(orderId, cancelMoney);
     }
+
 
     //주문취소(결제취소) 비회원 -> 비회원은 order에 따로 userId가 없어서 조회하는것처럼 주문번호와 패스워드를 사용해서 주문취소
     @Transactional
@@ -426,12 +429,27 @@ public class OrderService {
         if (order.getOrderStatus() != OrderStatus.PENDING) {
             throw new IllegalStateException("현재 주문 상태에서는 취소할 수 없습니다: " + order.getOrderStatus());
         }
-
-        //비회원은 환불로직을 어떻게 해야할지 고민
-
         order.setOrderStatus(OrderStatus.CANCELLED);
+        increaseBookStock(order);
+
+        int cancelMoney = order.getTotalPrice();
+
+        paymentService.paymentCancel(orderId, cancelMoney);
+
     }
 
+    private void increaseBookStock(Order order) {
+        List<OrderBookIdQuantityProjection> orderBookIdQuantityProjections = orderBookRepository.queryByOrder(order);
+        List<CartItem> orderItems = new ArrayList<>();
+        for (OrderBookIdQuantityProjection orderBookIdQuantityProjection : orderBookIdQuantityProjections) {
+            Long obId = orderBookIdQuantityProjection.getObId();
+            Integer quantity = orderBookIdQuantityProjection.getQuantity();
+            CartItem item = new CartItem(obId, quantity);
+            orderItems.add(item);
+        }
+        OrderItemListDto orderItemListDto = new OrderItemListDto(orderItems);
+        bookClient.increaseStock(orderItemListDto);
+    }
 
     //주문상태변경 (관리자)
     @Transactional
@@ -475,12 +493,12 @@ public class OrderService {
         LocalDateTime deliveryAt = order.getShippedAt(); // 출고일
         int refundPoint = 0;
 
-        if(reason.equals(RefundReason.DAMAGED)){
+        if (reason.equals(RefundReason.DAMAGED)) {
             if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
             refundPoint = order.getTotalPrice() + order.getTotalDiscountAmount(); //제품불량은 전부 환불
-        }else if(reason.equals(RefundReason.JUST)){
+        } else if (reason.equals(RefundReason.JUST)) {
             if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
@@ -490,11 +508,12 @@ public class OrderService {
 
         //환불 포인트 값 보내주기
         if (refundPoint > 0) {
-            userClient.refundPoint(userId, userId, refundPoint);
+            userClient.refundPoint(userId, refundPoint);
         }
 
         // 상태 변경
         order.setOrderStatus(OrderStatus.RETURNED);
+        increaseBookStock(order);
     }
 
     //반품(비회원)
@@ -510,23 +529,31 @@ public class OrderService {
             throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
         }
 
+        int refundMoney = 0;
+
         // 반품 가능 상태 확인 (예: 배송완료 상태만 반품 허용)
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
             throw new IllegalStateException("현재 상태에서는 반품할 수 없습니다.");
         }
-
         LocalDateTime shippedAt = order.getShippedAt(); //출고일
 
         if(reason.equals(RefundReason.DAMAGED)){
             if (shippedAt == null || shippedAt.plusDays(30).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
             }
+            refundMoney = order.getTotalPrice(); //제품불량은 전부 환불
         }else if(reason.equals(RefundReason.JUST)){
             if(shippedAt == null || shippedAt.plusDays(10).isBefore(LocalDateTime.now())) {
                 throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
             }
+            refundMoney = order.getTotalBookPrice(); //단순변심은 배송비제외
         }
         order.setOrderStatus(OrderStatus.RETURNED);
+        increaseBookStock(order);
+
+
+        paymentService.paymentCancel(orderId, refundMoney);
+
     }
 
 }

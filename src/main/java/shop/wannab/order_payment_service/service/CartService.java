@@ -22,7 +22,7 @@ public class CartService {
     private final CartRepository cartRepository;
 
     @Transactional(readOnly = true)
-    public OrderBookInfoListDto getCartItemInfos(long userIdentifier) {
+    public OrderBookInfoListDto getCartItemInfos(Long userIdentifier) {
         List<CartItem> cartItems = cartRepository.getCartItems(userIdentifier);
         return bookClient.getOrderBookInfos(new OrderItemListDto(cartItems));
     }
@@ -47,7 +47,7 @@ public class CartService {
             long guestId = createGuestId();
             cartRepository.createCart(guestId);
 
-            Cookie cookie = new Cookie("X-User-Id", String.valueOf(guestId));
+            Cookie cookie = new Cookie("guestId", String.valueOf(guestId));
             cookie.setHttpOnly(true);
             cookie.setPath("/");
             cookie.setMaxAge(60 * 60 * GUEST_CART_TTL);
