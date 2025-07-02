@@ -22,7 +22,7 @@ import shop.wannab.order_payment_service.entity.dto.*;
 
 import shop.wannab.order_payment_service.repository.GuestRepository;
 import shop.wannab.order_payment_service.repository.OrderBookRepository;
-import shop.wannab.order_payment_service.repository.OrderReopsitory;
+import shop.wannab.order_payment_service.repository.OrderRepository;
 import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
@@ -37,7 +37,7 @@ public class OrderService {
     private final PaymentService paymentService;
     private final CouponClient couponClient;
 
-    private final OrderReopsitory orderReopsitory;
+    private final OrderRepository orderRepository;
     private final GuestRepository guestRepository;
     private final OrderBookRepository orderBookRepository;
     private final WrappingPaperRepository wrappingPaperRepository;
@@ -113,7 +113,7 @@ public class OrderService {
                 orderSubmitDto.getRecipientPhoneNumber(),
                 orderSubmitDto.getRecipientAddress());
 
-        order = orderReopsitory.save(order);
+        order = orderRepository.save(order);
 
         //------- Order_book table record add -------//
         List<OrderBook> orderBooks = new ArrayList<>();
@@ -274,7 +274,7 @@ public class OrderService {
     public Page<OrderLookupResponse> getOrdersByUser(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
-        return orderReopsitory.findAllByUserId(userId, pageable)
+        return orderRepository.findAllByUserId(userId, pageable)
                 .map(order -> new OrderLookupResponse(
                         order.getId(),
                         order.getOrderName(),
@@ -300,7 +300,7 @@ public class OrderService {
         // 주문자 id나 이름도 띄우면 좋을듯
         // -> 비회원이면 이메일 띄우고
 
-        return orderReopsitory.findAll(pageable)
+        return orderRepository.findAll(pageable)
                 .map(order -> new OrderLookupResponse(
                         order.getId(),
                         order.getOrderName(),
@@ -348,9 +348,7 @@ public class OrderService {
                 bookDetails,
                 order.getId(),
                 order.getOrderAt(),
-                order.getOrderAt(), // TODO: 결제일시로 바꾸기
                 order.getOrderStatus(),
-                order.getId().toString(), // 송장번호 = 주문번호(임시)
                 order.getTotalPrice()
         );
     }
@@ -358,7 +356,7 @@ public class OrderService {
     //주문상세조회 (회원)
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrder(Long orderId, Long userId) {
-        Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
 
         // 본인만 조회할수있도록
         if (!userId.equals(order.getUserId())) {
@@ -371,7 +369,7 @@ public class OrderService {
     //주문상세조회 (비회원)
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderForGuest(Long orderId, String password) {
-        Order order = orderReopsitory.findById(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
 
         Guest guest = guestRepository.findByOrder_Id(orderId)
@@ -388,7 +386,7 @@ public class OrderService {
     @Transactional
     public void cancelOrder(Long orderId, Long userId){
 
-        Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
 
         // 본인만 취소할수있도록 검사
         if (!userId.equals(order.getUserId())) {
@@ -415,7 +413,7 @@ public class OrderService {
     //주문취소(결제취소) 비회원 -> 비회원은 order에 따로 userId가 없어서 조회하는것처럼 주문번호와 패스워드를 사용해서 주문취소
     @Transactional
     public void cancelGuestOrder(Long orderId, String password){
-        Order order = orderReopsitory.findById(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
 
         Guest guest = guestRepository.findByOrder_Id(orderId)
@@ -454,7 +452,7 @@ public class OrderService {
     //주문상태변경 (관리자)
     @Transactional
     public void updateStatus(Long userId, Long orderId, OrderStatus newStatus){
-        Order order = orderReopsitory.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
 
 //        // ADMIN 확인
 //        String role = userClient.getUserRole(userId);
@@ -476,7 +474,7 @@ public class OrderService {
     //반품 (회원)
     @Transactional
     public void refundOrder(Long userId, Long orderId, RefundReason reason){
-        Order order = orderReopsitory.findById(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다"));
 
         // 본인만 반품할수있도록 검사
@@ -519,7 +517,7 @@ public class OrderService {
     //반품(비회원)
     @Transactional
     public void refundGuestOrder(Long orderId, String password, RefundReason reason){
-        Order order = orderReopsitory.findById(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
 
         Guest guest = guestRepository.findByOrder_Id(orderId)

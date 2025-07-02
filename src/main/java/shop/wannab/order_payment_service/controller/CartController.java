@@ -25,7 +25,7 @@ public class CartController {
     }
 
     @GetMapping
-    public OrderBookInfoListDto getCartItems(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody Long guestId) {
+    public OrderBookInfoListDto getCartItems(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody(required = false) Long guestId) {
         if (Objects.nonNull(userId)) {
             return cartService.getCartItemInfos(userId);
         }
@@ -33,33 +33,34 @@ public class CartController {
     }
 
     @PostMapping("/books")
-    public OrderBookInfoListDto addProductToCart(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody Long guestId, @RequestParam Long bookId) {
+    public void addProductToCart(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody(required = false) Long guestId, @RequestParam Long bookId) {
         if (Objects.nonNull(userId)) {
             cartService.addCartItem(userId, bookId);
-            return cartService.getCartItemInfos(userId);
+        } else {
+            cartService.addCartItem(guestId, bookId);
         }
-        cartService.addCartItem(guestId, bookId);
-        return cartService.getCartItemInfos(guestId);
     }
 
     @PutMapping("/books/{book-id}")
-    public OrderBookInfoListDto updateCartItemQuantity(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestBody Long guestId, @PathVariable(name = "book-id") Long bookId, @RequestParam int quantity) {
+    public void updateCartItemQuantity(@RequestHeader(value = "X-USER-ID", required = false) Long userId,
+                                                       @RequestBody(required = false) Long guestId,
+                                                       @PathVariable(name = "book-id") Long bookId,
+                                                       @RequestParam int quantity) {
         if (Objects.nonNull(userId)) {
             cartService.updateItemQuantity(userId, bookId, quantity);
-            return cartService.getCartItemInfos(userId);
+        } else {
+            cartService.updateItemQuantity(guestId, bookId, quantity);
         }
-        cartService.updateItemQuantity(guestId, bookId, quantity);
-        return cartService.getCartItemInfos(guestId);
+
     }
 
     @DeleteMapping("/books/{book-id}")
-    public OrderBookInfoListDto removeProductFromCart(@RequestHeader("X-USER-ID") Long userId, @RequestBody Long guestId, @PathVariable(name = "book-id") Long bookId) {
+    public void removeProductFromCart(@RequestHeader("X-USER-ID") Long userId, @RequestBody(required = false) Long guestId, @PathVariable(name = "book-id") Long bookId) {
         if (Objects.nonNull(userId)) {
             cartService.removeProductFromCart(userId, bookId);
-            return cartService.getCartItemInfos(userId);
+        } else {
+            cartService.removeProductFromCart(guestId, bookId);
         }
-        cartService.removeProductFromCart(guestId, bookId);
-        return cartService.getCartItemInfos(guestId);
     }
 
 

@@ -1,78 +1,18 @@
 package shop.wannab.order_payment_service.repository;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Repository;
-import shop.wannab.order_payment_service.entity.CartItem;
+import shop.wannab.order_payment_service.entity.dto.CartItem;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
-import static shop.wannab.order_payment_service.constants.Constants.GUEST_CART_TTL;
+public interface CartRedisRepository {
+    List<CartItem> getCartItems(Long userIdentifier);
 
-@RequiredArgsConstructor
-@Repository
-public class CartRedisRepository implements CartRepository {
-    private static final long CART_DUMMY_KEY = -1;
-    private static final long CART_DUMMY_VAL = -1;
+    void addItemToCart(Long userIdentifier, long bookId);
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    private static final String CART_KEY_PREFIX = "cart:";
+    void updateItemQuantity(Long userIdentifier, long bookId, int quantity);
 
-    @Override
-    public List<CartItem> getCartItems(Long userIdentifier) {
-        List<CartItem> cartItems = new ArrayList<>();
-        if (Objects.isNull(userIdentifier)) {
-            return cartItems;
-        }
-        String cartKey = CART_KEY_PREFIX + userIdentifier;
-        Map<Long, Integer> cartBooks = redisTemplate.<Long, Integer>opsForHash().entries(cartKey); //key: bookId, value: quantity
+    void removeItemFromCart(Long userIdentifier, long bookId);
 
-        for (Map.Entry<Long, Integer> entry : cartBooks.entrySet()) {
-            CartItem item = new CartItem(entry.getKey(), entry.getValue());
-            cartItems.add(item);
-        }
-        return cartItems;
-    }
-
-    @Override
-    public void addItemToCart(Long userIdentifier, long bookId) {
-        String cartKey = CART_KEY_PREFIX + userIdentifier;
-        redisTemplate.opsForHash().increment(cartKey, bookId, 1);
-    }
-
-    @Override
-    public void updateItemQuantity(Long userIdentifier, long bookId, int quantity) {
-        String cartKey = CART_KEY_PREFIX + userIdentifier;
-        redisTemplate.opsForHash().put(cartKey, bookId, quantity);
-    }
-
-    @Override
-    public void removeItemFromCart(Long userIdentifier, long bookId) {
-        String cartKey = CART_KEY_PREFIX + userIdentifier;
-        redisTemplate.opsForHash().delete(cartKey, bookId);
-    }
-
-    @Override
-    public void createCart(Long userIdentifier) {
-        String cartKey;
-        if (isGuest(userIdentifier)) {
-            String guest = "guest:" + userIdentifier;
-            cartKey = CART_KEY_PREFIX + guest; //cart:guest:-142435
-
-            redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
-            redisTemplate.expire(cartKey, Duration.ofHours(GUEST_CART_TTL));
-            return;
-        }
-        cartKey = CART_KEY_PREFIX + userIdentifier;
-        redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
-    }
-
-    private boolean isGuest(long userIdentifier) {
-        return userIdentifier < 0;
-    }
+    void createCart(Long userIdentifier);
 
 }

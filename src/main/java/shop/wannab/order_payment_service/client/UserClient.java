@@ -22,7 +22,7 @@ public interface UserClient {
     void cancleOrderPointProcess(@PathVariable("order-id") Long orderId);
 
     //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
-    @PatchMapping("/api/users/points/refund")
+    @PostMapping("/api/users/points/refund")
     void refundPoint(@RequestHeader("X-USER-ID") Long headerUserId,
                      @RequestParam("amount") int refundPoint);
 

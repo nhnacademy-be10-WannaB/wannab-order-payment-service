@@ -15,7 +15,7 @@ import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmResponseDto;
 import shop.wannab.order_payment_service.repository.CancelRepository;
-import shop.wannab.order_payment_service.repository.OrderReopsitory;
+import shop.wannab.order_payment_service.repository.OrderRepository;
 import shop.wannab.order_payment_service.repository.PaymentRepository;
 
 @Service
@@ -24,7 +24,7 @@ public class PaymentService {
 
     private final TossPaymentsApiClient tossPaymentsApiClient;
     private final PaymentRepository paymentRepository;
-    private final OrderReopsitory orderRepository;
+    private final OrderRepository orderRepository;
     private final CancelRepository cancelRepository;
 
     @Value("${toss.payments.secretKey}")
