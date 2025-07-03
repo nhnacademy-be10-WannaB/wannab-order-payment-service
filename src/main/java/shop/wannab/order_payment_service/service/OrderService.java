@@ -287,17 +287,13 @@ public class OrderService {
 
     // 쇼핑몰 주문 전체 조회 (관리자용)
     @Transactional(readOnly = true)
-    public Page<OrderLookupResponse> getOrders(Long orderId,
-                                               String orderName,
-                                               OrderStatus orderStatus,
-                                               LocalDate from,
-                                               LocalDate to,
+    public Page<OrderLookupResponse> getOrders(OrderSearchDto orderSearchDto,
                                                int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
 
 
-        return orderRepository.searchOrders(orderId, orderName, orderStatus, from, to, pageable);
+        return orderRepository.searchOrders(orderSearchDto, pageable);
 
     }
 

@@ -16,6 +16,7 @@ import org.springframework.util.StringUtils;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.QOrder;
 import shop.wannab.order_payment_service.entity.dto.OrderLookupResponse;
+import shop.wannab.order_payment_service.entity.dto.OrderSearchDto;
 
 @RequiredArgsConstructor
 public class OrderQueryRepositoryImpl implements OrderQueryRepository{
@@ -24,15 +25,18 @@ public class OrderQueryRepositoryImpl implements OrderQueryRepository{
 
     //주문검색
     @Override
-    public Page<OrderLookupResponse> searchOrders(Long orderId,
-                                                  String orderName,
-                                                  OrderStatus orderStatus,
-                                                  LocalDate from, LocalDate to,
+    public Page<OrderLookupResponse> searchOrders(OrderSearchDto orderSearchDto,
                                                   Pageable pageable){
 
         QOrder order = QOrder.order;
 
         BooleanBuilder builder = new BooleanBuilder();
+
+        Long orderId = orderSearchDto.getOrderId();
+        String orderName = orderSearchDto.getOrderName();
+        OrderStatus orderStatus = orderSearchDto.getOrderStatus();
+        LocalDate from = orderSearchDto.getFrom();
+        LocalDate to = orderSearchDto.getTo();
 
         if(orderId != null){
             builder.and(order.id.eq(orderId));
