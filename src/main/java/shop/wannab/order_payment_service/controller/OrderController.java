@@ -1,8 +1,11 @@
 package shop.wannab.order_payment_service.controller;
 
 import feign.FeignException;
+import jakarta.validation.Valid;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.client.BookClient;
@@ -58,9 +61,10 @@ public class OrderController {
     //주문전체조회(관리자)
     @GetMapping("/admin/orders")
     public ResponseEntity<Page<OrderLookupResponse>> getAllOrders(@RequestHeader("X-USER-ID") Long userId,
+                                                                  @Valid @ModelAttribute OrderSearchDto orderSearchDto,
                                                                   @RequestParam(defaultValue = "0") int page,
-                                                                  @RequestParam(defaultValue = "20") int size){
-        Page<OrderLookupResponse> orders = orderService.getOrders(userId, page, size);
+                                                                  @RequestParam(defaultValue = "20") int size) {
+        Page<OrderLookupResponse> orders = orderService.getOrders(orderSearchDto, page, size);
         return ResponseEntity.ok(orders);
     }
 
