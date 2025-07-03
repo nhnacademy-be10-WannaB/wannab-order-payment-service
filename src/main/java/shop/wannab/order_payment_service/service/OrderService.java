@@ -287,28 +287,18 @@ public class OrderService {
 
     // 쇼핑몰 주문 전체 조회 (관리자용)
     @Transactional(readOnly = true)
-    public Page<OrderLookupResponse> getOrders(Long userId, int page, int size) {
+    public Page<OrderLookupResponse> getOrders(Long orderId,
+                                               String orderName,
+                                               OrderStatus orderStatus,
+                                               LocalDate from,
+                                               LocalDate to,
+                                               int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
-//        // ADMIN 확인
-//        String role = userClient.getUserRole(userId);
-//
-//        if (!"ADMIN".equalsIgnoreCase(role)) {
-//            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
-//        }
 
-        // 주문자 id나 이름도 띄우면 좋을듯
-        // -> 비회원이면 이메일 띄우고
 
-        return orderRepository.findAll(pageable)
-                .map(order -> new OrderLookupResponse(
-                        order.getId(),
-                        order.getOrderName(),
-                        order.getOrderAt(), //주문일시
-                        order.getOrderStatus(), //주문상태
-                        order.getShippedAt(), // 배송일(또는 null)
-                        order.getTotalPrice() //최종 결제금액
-                ));
+        return orderRepository.searchOrders(orderId, orderName, orderStatus, from, to, pageable);
+
     }
 
 
