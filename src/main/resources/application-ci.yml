@@ -31,6 +31,17 @@ spring:
     username: secret
     password: secret
 
+dbcp2:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+    initial-size: 5
+    max-total: 5
+    max-idle: 5
+    min-idle: 5
+
 server:
   port: 10392
   shutdown: graceful
