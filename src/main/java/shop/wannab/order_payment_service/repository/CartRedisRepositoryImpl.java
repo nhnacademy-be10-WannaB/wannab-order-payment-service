@@ -60,8 +60,7 @@ public class CartRedisRepositoryImpl implements CartRedisRepository {
     public void createCart(Long userIdentifier) {
         String cartKey;
         if (isGuest(userIdentifier)) {
-            String guest = "guest:" + userIdentifier;
-            cartKey = CART_KEY_PREFIX + guest; //cart:guest:-142435
+            cartKey = CART_KEY_PREFIX + userIdentifier; //cart:-142435
 
             redisTemplate.opsForHash().put(cartKey, CART_DUMMY_KEY, CART_DUMMY_VAL);
             redisTemplate.expire(cartKey, Duration.ofHours(GUEST_CART_TTL));

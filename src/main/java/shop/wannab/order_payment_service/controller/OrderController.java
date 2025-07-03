@@ -21,8 +21,8 @@ public class OrderController {
     private final BookClient bookClient;
     private final OrderService orderService;
 
-    @PostMapping
-    public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
+    @PostMapping("/orders")
+    public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
         try {
             bookClient.validateOrderItems(orderItemListDto);
         } catch (FeignException.BadRequest e) {
@@ -37,7 +37,7 @@ public class OrderController {
 
 
     @PostMapping("/orders/new")
-    OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam Long guestId, @RequestBody OrderSubmitDto orderSubmitDto) {
+    OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderSubmitDto orderSubmitDto) {
         if (Objects.nonNull(userId)) {
             return orderService.createOrder(orderSubmitDto, userId);
         }

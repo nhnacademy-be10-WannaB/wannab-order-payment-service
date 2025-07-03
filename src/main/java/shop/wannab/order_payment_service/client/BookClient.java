@@ -21,10 +21,10 @@ public interface BookClient {
     @PostMapping("/api/books/simple-info")
     BookIdTitlePriceListDto getBookSimpleInfos(@RequestBody BookIdListDto bookIdListDto);
 
-    @PostMapping("/decrease-stock")
+    @PostMapping("/api/books/decrease-stock")
     ResponseEntity<Void> decreaseStock(@RequestBody OrderItemListDto orderItemListDto);
 
-    @PostMapping("/increase-stock")
+    @PostMapping("/api/books/increase-stock")
     ResponseEntity<Void> increaseStock(@RequestBody OrderItemListDto orderItemListDto);
 }
 
