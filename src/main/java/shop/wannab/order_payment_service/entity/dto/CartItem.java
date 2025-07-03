@@ -3,12 +3,13 @@ package shop.wannab.order_payment_service.entity.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.List;
-
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-public class OrderItemListDto {
-    private List<CartItem> orderItems;
+public class CartItem {
+    private long bookId;
+    private int quantity;
 }

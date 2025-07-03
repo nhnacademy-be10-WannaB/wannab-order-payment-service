@@ -1,41 +1,36 @@
 package shop.wannab.order_payment_service.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.entity.dto.UserAddressResponse;
+import shop.wannab.order_payment_service.entity.dto.PointProcessRequest;
 
 import java.util.List;
 
 @FeignClient(name = "user-service")
 public interface UserClient {
-    @GetMapping("/api/users/{user-id}/points")
-    int getUserPoints(@PathVariable("user-id") Long userId, @RequestHeader("X-USER-ID") Long headerUserId);
+    @GetMapping("/api/users/points")
+    int getUserPoints(@RequestHeader("X-USER-ID") Long headerUserId);
 
-    @GetMapping("/api/users/{user-id}/addresses")
-    List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId,
-                                              @PathVariable("user-id") Long userId);
+    @GetMapping("/api/users/addresses")
+    List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId);
 
-    //사용한 포인트 차감(사용한 포인트값만 던져줌)
-    @PatchMapping("/api/users/{user-id}/points")
-    void usePoint(@RequestHeader("X-USER-ID") Long headerUserId,
-                  @PathVariable("user-id") Long userId,
-                  @RequestParam("used") int usedPoint);
+    @PostMapping("/api/users/points/process")
+    void processPoints(@RequestBody PointProcessRequest pointProcessRequest);
+
+    @PostMapping("/api/users/points/orders/{order-id}/cancle")
+    void cancleOrderPointProcess(@PathVariable("order-id") Long orderId);
 
     //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
-    @PatchMapping("/api/users/{user-id}/points/refund")
+    @PostMapping("/api/users/points/refund")
     void refundPoint(@RequestHeader("X-USER-ID") Long headerUserId,
-                     @PathVariable("user-id") Long userId,
                      @RequestParam("amount") int refundPoint);
 
-    // 이메일 (임시)
-    @GetMapping("/api/users/{user-id}/email")
-    String getUserEmail(@PathVariable("user-id") Long userId);
-
-    //유저역할
-    @GetMapping("/users/{userId}/role")
-    String getUserRole(@PathVariable("user-id") Long userId);
+//    // 이메일 (보류)
+//    @GetMapping("/api/users/{user-id}/email")
+//    String getUserEmail(@PathVariable("user-id") Long userId);
+//
+//    //유저역할 (보류)
+//    @GetMapping("/users/{userId}/role")
+//    String getUserRole(@PathVariable("user-id") Long userId);
 }

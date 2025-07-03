@@ -7,12 +7,15 @@ import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.TossPaymentsApiClient;
+import shop.wannab.order_payment_service.entity.payment.Cancel;
 import shop.wannab.order_payment_service.entity.payment.Payment;
 import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmResponseDto;
-import shop.wannab.order_payment_service.repository.OrderReopsitory;
+import shop.wannab.order_payment_service.repository.CancelRepository;
+import shop.wannab.order_payment_service.repository.OrderRepository;
 import shop.wannab.order_payment_service.repository.PaymentRepository;
 
 @Service
@@ -21,11 +24,13 @@ public class PaymentService {
 
     private final TossPaymentsApiClient tossPaymentsApiClient;
     private final PaymentRepository paymentRepository;
-    private final OrderReopsitory orderRepository;
+    private final OrderRepository orderRepository;
+    private final CancelRepository cancelRepository;
 
     @Value("${toss.payments.secretKey}")
     private String secretKey;
 
+    @Transactional
     public FinalOrderResultDto confirmAndProcessPayment(TossConfirmRequestDto requestDto) {
         String encodedAuth = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
         String authHeader = "Basic " + encodedAuth;
@@ -39,7 +44,7 @@ public class PaymentService {
 //      TODO: 주문 정보 조회 및 상태 변경
 //      왜 이렇게 파싱하냐면 토스페이먼츠 API에 orderId를 보낼때 최소 6자이상 String 타입을 보내야해서 붙였습니다
 //      그래서 아래에 파싱한 orderId로 OrderRepository에서 값 변경하시거나 활용할때 사용하시면 될거같습니다.
-        Long orderId = Long.parseLong(requestDto.getOrderId().replace("WannaB", ""));
+        Long orderId = Long.parseLong(requestDto.getOrderId().replace("testWannaB", ""));
         LocalDateTime approvedAt = null;
         if (tossResponse.getApprovedAt() != null && !tossResponse.getApprovedAt().isEmpty()) {
             approvedAt = OffsetDateTime.parse(tossResponse.getApprovedAt()).toLocalDateTime();
@@ -68,5 +73,23 @@ public class PaymentService {
                 tossResponse.getOrderId(),
                 tossResponse.getTotalAmount()
         );
+    }
+
+    @Transactional
+    public void paymentCancel(Long orderId,Integer cancelAmount) {
+        Payment payment = paymentRepository.findById(orderId).orElse(null);
+        if (payment == null) {
+            throw new IllegalStateException("결제 내역이 존재하지 않습니다.");
+        }
+        payment.setStatus("CANCELLED");
+
+        Cancel cancel = new Cancel(
+                payment.getPaymentKey(),
+                payment,
+                cancelAmount,
+                LocalDateTime.now()
+        );
+        paymentRepository.save(payment);
+        cancelRepository.save(cancel);
     }
 }

@@ -4,24 +4,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
 @Entity
-@Setter
 @Getter
 @NoArgsConstructor
 @Table(name = "orders")
@@ -32,15 +27,21 @@ public class Order {
     @Column(name = "order_id")
     private Long id;
 
+    @NotNull
+    @Column(name = "order_name")
+    private String orderName;
+
     @Column(name = "order_at")
     private LocalDateTime orderAt;
 
-    @Column(name = "delivery_at")
-    private LocalDateTime deliveryAt;
+    @Setter
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
 
     @Column(name = "delivery_want")
     private LocalDate deliveryWant;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status")
     private OrderStatus orderStatus;
@@ -48,29 +49,57 @@ public class Order {
     @Column(name = "total_book_price")
     private int totalBookPrice;
 
-    @Column(name = "total_discount")
-    private int totalDiscount;
+    @Column(name = "total_discount_amount")
+    private int totalDiscountAmount;
 
-    @Column(name = "delivery_fee")
-    private int deliveryFee;
+    @Column(name = "shipping_fee")
+    private int shippingFee;
 
     @Column(name = "total_wrapping_price")
     private int totalWrappingPrice;
 
-
-    //외부 API
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "adress_id")
-    private Long addressId;
+    @NotNull
+    @Column(name = "recipient_name")
+    private String recipientName;
 
+    @NotNull
+    @Column(name = "recipient_email")
+    private String recipientEmail;
+
+    @NotNull
+    @Column(name = "recipient_phone")
+    private String recipientPhoneNumber;
+
+    @NotNull
+    @Column(name = "recipient_address")
+    private String recipientAddress;
+
+
+    public Order(Long userId, String orderName, LocalDateTime shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
+        this.orderAt =  LocalDateTime.now();
+        this.orderName = orderName;
+        this.shippedAt = shippedAt;
+        this.orderStatus = OrderStatus.PENDING;
+        this.deliveryWant = deliveryRequestAt;
+        this.userId = userId;
+        this.totalBookPrice = totalBookPrice;
+        this.totalDiscountAmount = totalDiscountAmount;
+        this.shippingFee = shippingFee;
+        this.totalWrappingPrice = totalWrappingPaperPrice;
+        this.recipientName = recipientName;
+        this.recipientEmail = recipientEmail;
+        this.recipientPhoneNumber = recipientPhoneNumber;
+        this.recipientAddress = recipientAddress;
+    }
 
     //총 결제금액 계산
     public int getTotalPrice() {
         return totalBookPrice
                 + totalWrappingPrice
-                + deliveryFee
-                - totalDiscount;
+                + shippingFee
+                - totalDiscountAmount;
     }
 }

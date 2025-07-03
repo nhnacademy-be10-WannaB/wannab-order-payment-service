@@ -18,14 +18,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Run build (clean test)
+      - name: Run build (clean verify)
         run: |
           if [ -f src/main/resources/application-ci.yml ]; then
-            mvn clean test \
+            mvn clean verify \
               -Dspring.config.import=optional:classpath:/application-ci.yml \
               -Dspring.profiles.active=ci
           else
-            mvn clean test
+            mvn clean verify
           fi
 
   test-success:

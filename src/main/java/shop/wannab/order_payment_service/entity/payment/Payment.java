@@ -3,7 +3,6 @@ package shop.wannab.order_payment_service.entity.payment;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
@@ -19,6 +18,7 @@ import shop.wannab.order_payment_service.entity.Order;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
+
     @Id
     private String paymentKey;
 
@@ -42,7 +42,6 @@ public class Payment {
     private LocalDateTime approvedAt;
 
     @OneToOne
-    @MapsId
     @JoinColumn(name = "order_id")
     private Order order;
 }

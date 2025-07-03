@@ -6,6 +6,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,19 +19,16 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Cancel {
     @Id
-    private Long id;
+    private String id;
 
     @OneToOne
     @MapsId
-    @JoinColumn(name = "payment_key")
+    @JoinColumn(name = "id")
     private Payment payment;
 
     @NotNull
     private Integer cancelAmount;
 
     @NotNull
-    private String cancelReason;
-
-    @NotNull
-    private String cancelAt;
+    private LocalDateTime cancelAt;
 }
