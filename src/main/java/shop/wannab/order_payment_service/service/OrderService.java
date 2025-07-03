@@ -97,7 +97,10 @@ public class OrderService {
 
         //------- Orders table record add -------//
         int totalBookPrice = getTotalBookPrice(bookSimpleInfos, orderSubmitDto.getBookOrderSubmitDtos());
-        int totalDiscountAmount = getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
+        int totalDiscountAmount = 0;
+        if (userId > 0) {
+            getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
+        }
         int shippingFee = getShippingFee(totalBookPrice);
         int totalWrappingPaperPrice = getTotalWrappingPaperPrice(orderSubmitDto);
         String orderName = createOrderName(bookSimpleInfos.getIdTitlePriceDtos().get(0).getTitle(), bookIds.size());
@@ -339,8 +342,8 @@ public class OrderService {
                             info.getBookId(),
                             info.getTitle(),
                             quantity,
-                            totalPrice,
-                            info.getThumbnailUrl()
+                            totalPrice
+                            //info.getThumbnailUrl()
                     );
                 }).toList();
 

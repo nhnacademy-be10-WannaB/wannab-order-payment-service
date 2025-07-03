@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.BookClient;
 import shop.wannab.order_payment_service.entity.dto.CartItem;
+import shop.wannab.order_payment_service.entity.dto.GuestCartCookieDto;
 import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
 import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
 import shop.wannab.order_payment_service.repository.CartRepository;
@@ -47,16 +48,11 @@ public class CartService {
         cartBackupScheduler.onCartChanged(userIdentifier);
     }
 
-    public Cookie createCart(Long userIdentifier) {
+    public GuestCartCookieDto createCart(Long userIdentifier) {
         if (Objects.isNull(userIdentifier)) {
             long guestId = createGuestId();
             cartRepository.createCart(guestId);
-
-            Cookie cookie = new Cookie("guestId", String.valueOf(guestId));
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(60 * 60 * GUEST_CART_TTL);
-            return cookie;
+            return new GuestCartCookieDto(guestId, 60 * 60 * GUEST_CART_TTL);
         }
         cartRepository.createCart(userIdentifier);
         return null;
