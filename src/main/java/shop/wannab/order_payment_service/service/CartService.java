@@ -10,16 +10,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.BookClient;
-import shop.wannab.order_payment_service.entity.CartItem;
+import shop.wannab.order_payment_service.entity.dto.CartItem;
 import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
 import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
 import shop.wannab.order_payment_service.repository.CartRepository;
+import shop.wannab.order_payment_service.scheduler.CartBackupScheduler;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
     private final BookClient bookClient;
     private final CartRepository cartRepository;
+    private final CartBackupScheduler cartBackupScheduler;
 
     @Transactional(readOnly = true)
     public OrderBookInfoListDto getCartItemInfos(Long userIdentifier) {
@@ -30,16 +32,19 @@ public class CartService {
     @Transactional
     public void addCartItem(Long userIdentifier, long bookId) {
         cartRepository.addItemToCart(userIdentifier, bookId);
+        cartBackupScheduler.onCartChanged(userIdentifier);
     }
 
     @Transactional
     public void updateItemQuantity(Long userIdentifier, long bookId, int quantity) {
         cartRepository.updateItemQuantity(userIdentifier, bookId, quantity);
+        cartBackupScheduler.onCartChanged(userIdentifier);
     }
 
     @Transactional
     public void removeProductFromCart(Long userIdentifier, long bookId) {
         cartRepository.removeItemFromCart(userIdentifier, bookId);
+        cartBackupScheduler.onCartChanged(userIdentifier);
     }
 
     public Cookie createCart(Long userIdentifier) {

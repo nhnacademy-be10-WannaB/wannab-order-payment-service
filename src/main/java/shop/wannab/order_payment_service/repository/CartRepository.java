@@ -1,18 +1,9 @@
 package shop.wannab.order_payment_service.repository;
 
-import shop.wannab.order_payment_service.entity.CartItem;
+import org.springframework.data.jpa.repository.JpaRepository;
+import shop.wannab.order_payment_service.entity.Cart;
 
-import java.util.List;
+public interface CartRepository extends JpaRepository<Cart, Long>, CartRedisRepository {
 
-public interface CartRepository {
-    List<CartItem> getCartItems(Long userIdentifier);
-
-    void addItemToCart(Long userIdentifier, long bookId);
-
-    void updateItemQuantity(Long userIdentifier, long bookId, int quantity);
-
-    void removeItemFromCart(Long userIdentifier, long bookId);
-
-    void createCart(Long userIdentifier);
 
 }
