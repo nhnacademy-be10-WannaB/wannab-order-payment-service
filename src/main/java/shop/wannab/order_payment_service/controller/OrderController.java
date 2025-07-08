@@ -125,4 +125,12 @@ public class OrderController {
     }
 
 
+    //리뷰가능여부확인
+    @GetMapping("/orders/review-check")
+    public ResponseEntity<Boolean> isReviewable(@RequestParam Long userId, @RequestParam Long bookId) {
+        boolean result = orderService.isReviewable(userId, bookId);
+        return ResponseEntity.ok(result);
+    }
+
+
 }
