@@ -76,20 +76,18 @@ public class PaymentService {
     }
 
     @Transactional
-    public void paymentCancel(Long orderId,Integer cancelAmount) {
-        Payment payment = paymentRepository.findByOrder_Id(orderId).orElse(null);
-        if (payment == null) {
-            throw new IllegalStateException("결제 내역이 존재하지 않습니다.");
-        }
+    public void paymentCancel(Long orderId, Integer cancelAmount) {
+        Payment payment = paymentRepository.findByOrder_Id(orderId)
+                .orElseThrow(() -> new IllegalStateException("결제 내역이 존재하지 않습니다."));
+
         payment.setStatus("CANCELLED");
 
         Cancel cancel = new Cancel(
-                payment.getPaymentKey(),
                 payment,
                 cancelAmount,
                 LocalDateTime.now()
         );
-        paymentRepository.save(payment);
+
         cancelRepository.save(cancel);
     }
 }
