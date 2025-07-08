@@ -343,7 +343,8 @@ public class OrderService {
                 order.getTotalPrice(),
                 order.getShippingFee(),
                 order.getTotalDiscountAmount(),
-                order.getTotalWrappingPrice()
+                order.getTotalWrappingPrice(),
+                order.getRecipientName()
         );
     }
 
@@ -431,12 +432,12 @@ public class OrderService {
     }
 
     private void increaseBookStock(Order order) {
-        List<OrderBookIdQuantityProjection> orderBookIdQuantityProjections = orderBookRepository.queryByOrder(order);
+        List<BookIdQuantityProjection> bookIdQuantityProjections = orderBookRepository.queryByOrder(order);
         List<CartItem> orderItems = new ArrayList<>();
-        for (OrderBookIdQuantityProjection orderBookIdQuantityProjection : orderBookIdQuantityProjections) {
-            Long obId = orderBookIdQuantityProjection.getObId();
-            Integer quantity = orderBookIdQuantityProjection.getQuantity();
-            CartItem item = new CartItem(obId, quantity);
+        for (BookIdQuantityProjection bookIdQuantityProjection : bookIdQuantityProjections) {
+            Long bookId = bookIdQuantityProjection.getBookId();
+            Integer quantity = bookIdQuantityProjection.getQuantity();
+            CartItem item = new CartItem(bookId, quantity);
             orderItems.add(item);
         }
         OrderItemListDto orderItemListDto = new OrderItemListDto(orderItems);
