@@ -14,10 +14,13 @@ import shop.wannab.order_payment_service.entity.OrderStatus;
 public class OrderDetailResponse {
 
     private final List<OrderBookDetailResponse> books;
-    private final Long orderNumber;          //주문번호 (일단 orderid그대로)
+    private final Long orderId;          //주문번호 (일단 orderid그대로)
     private final LocalDateTime orderAt;       //주문일시
     private final OrderStatus orderStatus;     //주문상태
     private final int totalPrice;           //총 주문금액
+    private final int shippingFee;  //배송비
+    private final int totalDiscount;    //총 할인가격
+    private final int totalWrappinpPrice;   //총 포장지가격
 
 
 }

@@ -1,8 +1,11 @@
 package shop.wannab.order_payment_service.controller;
 
 import feign.FeignException;
+import jakarta.validation.Valid;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.client.BookClient;
@@ -58,9 +61,10 @@ public class OrderController {
     //주문전체조회(관리자)
     @GetMapping("/admin/orders")
     public ResponseEntity<Page<OrderLookupResponse>> getAllOrders(@RequestHeader("X-USER-ID") Long userId,
+                                                                  @Valid @ModelAttribute OrderSearchDto orderSearchDto,
                                                                   @RequestParam(defaultValue = "0") int page,
-                                                                  @RequestParam(defaultValue = "20") int size){
-        Page<OrderLookupResponse> orders = orderService.getOrders(userId, page, size);
+                                                                  @RequestParam(defaultValue = "20") int size) {
+        Page<OrderLookupResponse> orders = orderService.getOrders(orderSearchDto, page, size);
         return ResponseEntity.ok(orders);
     }
 
@@ -73,11 +77,10 @@ public class OrderController {
     }
 
     //주문상세조회(비회원)
-    @GetMapping("/orders/guest")
-    public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestParam Long orderId,
-                                                                   @RequestParam String password){
+    @PostMapping("/orders/guest")
+    public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestBody GuestOrderRequest request){
 
-        return ResponseEntity.ok(orderService.getOrderForGuest(orderId, password));
+        return ResponseEntity.ok(orderService.getOrderForGuest(request.getOrderId(), request.getPassword()));
     }
 
     //주문취소(결제취소) 회원
@@ -90,9 +93,8 @@ public class OrderController {
 
     //주문취소(결제취소) 비회원
     @PostMapping("/orders/guest/cancel")
-    public ResponseEntity<Void> cancelGuestOrder(@RequestParam Long orderId,
-                                                 @RequestParam String password){
-        orderService.cancelGuestOrder(orderId, password);
+    public ResponseEntity<Void> cancelGuestOrder(@RequestBody GuestOrderRequest request){
+        orderService.cancelGuestOrder(request.getOrderId(), request.getPassword());
         return ResponseEntity.ok().build();
     }
 
@@ -116,11 +118,18 @@ public class OrderController {
 
     //반품(비회원)
     @PostMapping("/orders/guest/refund")
-    public ResponseEntity<Void> refundGuestOrder(@RequestParam Long orderId,
-                                                 @RequestParam String password,
+    public ResponseEntity<Void> refundGuestOrder(@RequestBody GuestOrderRequest request,
                                                  @RequestParam RefundReason reason){
-        orderService.refundGuestOrder(orderId, password, reason);
+        orderService.refundGuestOrder(request.getOrderId(), request.getPassword(), reason);
         return ResponseEntity.ok().build();
+    }
+
+
+    //리뷰가능여부확인
+    @GetMapping("/orders/review-check")
+    public ResponseEntity<Boolean> isReviewable(@RequestParam Long userId, @RequestParam Long bookId) {
+        boolean result = orderService.isReviewable(userId, bookId);
+        return ResponseEntity.ok(result);
     }
 
 

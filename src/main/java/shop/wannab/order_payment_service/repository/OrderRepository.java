@@ -7,8 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import shop.wannab.order_payment_service.entity.Order;
 import shop.wannab.order_payment_service.entity.OrderStatus;
+import shop.wannab.order_payment_service.repository.query.OrderQueryRepository;
 
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, Long>, OrderQueryRepository {
 
     //주문목록조회 (회원)
     Page<Order> findAllByUserId(Long userId, Pageable pageable);
