@@ -51,14 +51,13 @@ public class OrderService {
         List<UserAddressResponse> userAddresses = List.of();
 
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
-
         if (userId > 0) {
             userPoints = userClient.getUserPoints(userId);
             userAddresses = userClient.getAllAddresses(userId);
             List<Long> bookIdList = orderBookInfos.getOrderBookInfos().stream().map(OrderBookInfo::getBookId).toList();
 
             ApplicableCouponsDto applicableCouponsDto = couponClient.getApplicableCoupons(userId, new OrderCouponsRequestDto(bookIdList)).getBody();
-
+            List<OrderCouponDto> orderCouponDtos = new ArrayList<>(applicableCouponsDto.getOrderCoupons());
             for (OrderBookInfo orderBookInfo : orderBookInfos.getOrderBookInfos()) {
                 long bookId = orderBookInfo.getBookId();
                 Map<Long, List<BookCouponDto>> bookIdCouponsMap = applicableCouponsDto.getItemCoupons();
@@ -66,7 +65,8 @@ public class OrderService {
                 orderBookInfo.setApplicableCoupons(bookApplicableCoupons);
 
             }
-            return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, applicableCouponsDto.getOrderCoupons(), userId);
+            OrderPageRequestDto orderPageRequestDto = new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, orderCouponDtos, userId);
+            return orderPageRequestDto;
         }
         return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of(), userId);
 
@@ -231,7 +231,9 @@ public class OrderService {
         //책에 적용한 쿠폰의 할인정보 받아오는 로직//
         Map<Long, Long> couponIdBookIdMap = new HashMap<>();
         for (BookOrderSubmitDto bookDto : bookOrderSubmitDtos) {
-            couponIdBookIdMap.put(bookDto.getAppliedCouponId(), bookDto.getBookId());
+            if (Objects.nonNull(bookDto.getAppliedCouponId())) {
+                couponIdBookIdMap.put(bookDto.getAppliedCouponId(), bookDto.getBookId());
+            }
         }
 
         if (Objects.nonNull(dto.getAppliedOrderCouponId())) {
