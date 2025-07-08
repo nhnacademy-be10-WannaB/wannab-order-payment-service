@@ -343,7 +343,8 @@ public class OrderService {
                 order.getTotalPrice(),
                 order.getShippingFee(),
                 order.getTotalDiscountAmount(),
-                order.getTotalWrappingPrice()
+                order.getTotalWrappingPrice(),
+                order.getRecipientName()
         );
     }
 
