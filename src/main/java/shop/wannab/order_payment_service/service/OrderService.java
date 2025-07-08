@@ -123,7 +123,7 @@ public class OrderService {
         for (BookOrderSubmitDto bookOrderSubmitDto : orderSubmitDto.getBookOrderSubmitDtos()) {
             WrappingPaper wrappingPaper = null;
             if (Objects.nonNull(bookOrderSubmitDto.getWrappingPaperId())) {
-                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("존재하지 않는 포장지 아이디"));
+                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElse(null);
             }
             OrderBook orderBook = new OrderBook(order, bookOrderSubmitDto.getBookId(), wrappingPaper, bookOrderSubmitDto.getBookQuantity(), bookIdPriceMap.get(bookOrderSubmitDto.getBookId()));
             orderBooks.add(orderBook);
@@ -340,7 +340,10 @@ public class OrderService {
                 order.getId(),
                 order.getOrderAt(),
                 order.getOrderStatus(),
-                order.getTotalPrice()
+                order.getTotalPrice(),
+                order.getShippingFee(),
+                order.getTotalDiscountAmount(),
+                order.getTotalWrappingPrice()
         );
     }
 

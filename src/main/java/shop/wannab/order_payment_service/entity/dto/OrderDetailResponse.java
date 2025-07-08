@@ -18,6 +18,9 @@ public class OrderDetailResponse {
     private final LocalDateTime orderAt;       //주문일시
     private final OrderStatus orderStatus;     //주문상태
     private final int totalPrice;           //총 주문금액
+    private final int shippingFee;  //배송비
+    private final int totalDiscount;    //총 할인가격
+    private final int totalWrappinpPrice;   //총 포장지가격
 
 
 }
