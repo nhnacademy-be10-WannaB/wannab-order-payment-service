@@ -51,14 +51,13 @@ public class OrderService {
         List<UserAddressResponse> userAddresses = List.of();
 
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
-
         if (userId > 0) {
             userPoints = userClient.getUserPoints(userId);
             userAddresses = userClient.getAllAddresses(userId);
             List<Long> bookIdList = orderBookInfos.getOrderBookInfos().stream().map(OrderBookInfo::getBookId).toList();
 
             ApplicableCouponsDto applicableCouponsDto = couponClient.getApplicableCoupons(userId, new OrderCouponsRequestDto(bookIdList)).getBody();
-
+            List<OrderCouponDto> orderCouponDtos = new ArrayList<>(applicableCouponsDto.getOrderCoupons());
             for (OrderBookInfo orderBookInfo : orderBookInfos.getOrderBookInfos()) {
                 long bookId = orderBookInfo.getBookId();
                 Map<Long, List<BookCouponDto>> bookIdCouponsMap = applicableCouponsDto.getItemCoupons();
@@ -66,7 +65,8 @@ public class OrderService {
                 orderBookInfo.setApplicableCoupons(bookApplicableCoupons);
 
             }
-            return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, applicableCouponsDto.getOrderCoupons(), userId);
+            OrderPageRequestDto orderPageRequestDto = new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, orderCouponDtos, userId);
+            return orderPageRequestDto;
         }
         return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of(), userId);
 
@@ -123,7 +123,7 @@ public class OrderService {
         for (BookOrderSubmitDto bookOrderSubmitDto : orderSubmitDto.getBookOrderSubmitDtos()) {
             WrappingPaper wrappingPaper = null;
             if (Objects.nonNull(bookOrderSubmitDto.getWrappingPaperId())) {
-                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("존재하지 않는 포장지 아이디"));
+                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElse(null);
             }
             OrderBook orderBook = new OrderBook(order, bookOrderSubmitDto.getBookId(), wrappingPaper, bookOrderSubmitDto.getBookQuantity(), bookIdPriceMap.get(bookOrderSubmitDto.getBookId()));
             orderBooks.add(orderBook);
@@ -231,7 +231,9 @@ public class OrderService {
         //책에 적용한 쿠폰의 할인정보 받아오는 로직//
         Map<Long, Long> couponIdBookIdMap = new HashMap<>();
         for (BookOrderSubmitDto bookDto : bookOrderSubmitDtos) {
-            couponIdBookIdMap.put(bookDto.getAppliedCouponId(), bookDto.getBookId());
+            if (Objects.nonNull(bookDto.getAppliedCouponId())) {
+                couponIdBookIdMap.put(bookDto.getAppliedCouponId(), bookDto.getBookId());
+            }
         }
 
         if (Objects.nonNull(dto.getAppliedOrderCouponId())) {
@@ -338,7 +340,10 @@ public class OrderService {
                 order.getId(),
                 order.getOrderAt(),
                 order.getOrderStatus(),
-                order.getTotalPrice()
+                order.getTotalPrice(),
+                order.getShippingFee(),
+                order.getTotalDiscountAmount(),
+                order.getTotalWrappingPrice()
         );
     }
 
