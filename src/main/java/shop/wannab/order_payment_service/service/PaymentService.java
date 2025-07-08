@@ -65,7 +65,7 @@ public class PaymentService {
         );
 
         // 5. DB에 Payment 정보 저장
-        //paymentRepository.save(payment);
+        paymentRepository.save(payment);
 
         // 6. 프론트 서비스에 전달할 최종 결과 DTO 생성 및 반환
         return new FinalOrderResultDto(
@@ -77,7 +77,7 @@ public class PaymentService {
 
     @Transactional
     public void paymentCancel(Long orderId,Integer cancelAmount) {
-        Payment payment = paymentRepository.findById(orderId).orElse(null);
+        Payment payment = paymentRepository.findByOrder_Id(orderId).orElse(null);
         if (payment == null) {
             throw new IllegalStateException("결제 내역이 존재하지 않습니다.");
         }
