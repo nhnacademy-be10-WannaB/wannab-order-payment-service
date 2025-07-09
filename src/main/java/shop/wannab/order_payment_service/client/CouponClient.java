@@ -9,7 +9,7 @@ import shop.wannab.order_payment_service.entity.dto.*;
 
 import java.util.List;
 
-@FeignClient(name = "wannab-coupon-service")
+@FeignClient(name = "coupon-service")
 public interface CouponClient {
 
     @PostMapping("/api/coupons/order")
