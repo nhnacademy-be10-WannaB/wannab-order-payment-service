@@ -106,7 +106,8 @@ public class OrderService {
         String orderName = createOrderName(bookSimpleInfos.getIdTitlePriceDtos().get(0).getTitle(), bookIds.size());
         Order order = new Order(userId,
                 orderName,
-                getShippingDate(),
+//                getShippingDate(),
+                null,
                 orderSubmitDto.getDeliveryRequestAt(),
                 totalBookPrice, totalDiscountAmount,
                 shippingFee,
@@ -200,23 +201,23 @@ public class OrderService {
         return totalWrappingPaperPrice;
     }
 
-    private LocalDateTime getShippingDate() { //출고일 정책
-        LocalDateTime now = LocalDateTime.now();
-
-        // 15시 이후면 다음 날로
-        if (now.toLocalTime().isAfter(LocalTime.of(15, 0))) {
-            now = now.plusDays(1);
-        }
-
-        LocalDate date = now.toLocalDate();
-
-        // 주말이면 월요일까지 이동
-        while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
-               date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            now = date.plusDays(1).atStartOfDay();
-        }
-        return now;
-    }
+//    private LocalDateTime getShippingDate() { //출고일 정책
+//        LocalDateTime now = LocalDateTime.now();
+//
+//        // 15시 이후면 다음 날로
+//        if (now.toLocalTime().isAfter(LocalTime.of(15, 0))) {
+//            now = now.plusDays(1);
+//        }
+//
+//        LocalDate date = now.toLocalDate();
+//
+//        // 주말이면 월요일까지 이동
+//        while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
+//               date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+//            now = date.plusDays(1).atStartOfDay();
+//        }
+//        return now;
+//    }
 
     private String createOrderName(String oneOfBookTitle, int orderItemCount) {
         if (orderItemCount > 1) {
@@ -279,7 +280,7 @@ public class OrderService {
     public Page<OrderLookupResponse> getOrdersByUser(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
-        return orderRepository.findAllByUserId(userId, pageable)
+        return orderRepository.findAllByUserIdAndOrderStatusNot(userId, OrderStatus.FAILED, pageable)
                 .map(order -> new OrderLookupResponse(
                         order.getId(),
                         order.getOrderName(),
@@ -343,7 +344,8 @@ public class OrderService {
                 order.getTotalPrice(),
                 order.getShippingFee(),
                 order.getTotalDiscountAmount(),
-                order.getTotalWrappingPrice()
+                order.getTotalWrappingPrice(),
+                order.getRecipientName()
         );
     }
 
@@ -387,8 +389,8 @@ public class OrderService {
             throw new IllegalArgumentException("본인 주문만 취소가능");
         }
 
-        // PENDING(대기)에서만 취소가능
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
+        // PAID(대기)에서만 취소가능
+        if (order.getOrderStatus() != OrderStatus.PAID) {
             throw new IllegalStateException("현재 주문 상태에서는 취소할 수 없습니다: " + order.getOrderStatus());
         }
 
@@ -417,8 +419,8 @@ public class OrderService {
             throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
         }
 
-        // PENDING(대기)에서만 취소가능
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
+        // PAID(대기)에서만 취소가능
+        if (order.getOrderStatus() != OrderStatus.PAID) {
             throw new IllegalStateException("현재 주문 상태에서는 취소할 수 없습니다: " + order.getOrderStatus());
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
@@ -431,12 +433,12 @@ public class OrderService {
     }
 
     private void increaseBookStock(Order order) {
-        List<OrderBookIdQuantityProjection> orderBookIdQuantityProjections = orderBookRepository.queryByOrder(order);
+        List<BookIdQuantityProjection> bookIdQuantityProjections = orderBookRepository.queryByOrder(order);
         List<CartItem> orderItems = new ArrayList<>();
-        for (OrderBookIdQuantityProjection orderBookIdQuantityProjection : orderBookIdQuantityProjections) {
-            Long obId = orderBookIdQuantityProjection.getObId();
-            Integer quantity = orderBookIdQuantityProjection.getQuantity();
-            CartItem item = new CartItem(obId, quantity);
+        for (BookIdQuantityProjection bookIdQuantityProjection : bookIdQuantityProjections) {
+            Long bookId = bookIdQuantityProjection.getBookId();
+            Integer quantity = bookIdQuantityProjection.getQuantity();
+            CartItem item = new CartItem(bookId, quantity);
             orderItems.add(item);
         }
         OrderItemListDto orderItemListDto = new OrderItemListDto(orderItems);
