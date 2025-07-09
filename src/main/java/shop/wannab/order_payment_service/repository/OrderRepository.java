@@ -17,4 +17,10 @@ public interface OrderRepository extends JpaRepository<Order, Long>, OrderQueryR
 
     //배송중으로 변경뒤 일정시간 지난후 배송완료로 변경
     List<Order> findByOrderStatusAndShippedAtBefore(OrderStatus status, LocalDateTime shippedAtBefore);
+
+    //failed 필터후 주문목록조회
+    Page<Order> findAllByUserIdAndOrderStatusNot(Long userId, OrderStatus status, Pageable pageable);
+
+    //대기후 결제가 되지않으면 주문상태를 FAILED로 변환
+    List<Order> findByOrderStatusAndOrderAtBefore(OrderStatus status, LocalDateTime threshold);
 }

@@ -3,6 +3,7 @@ package shop.wannab.order_payment_service.scheduler;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,7 @@ import shop.wannab.order_payment_service.repository.OrderRepository;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OrderStatusScheduler {
 
     private final OrderRepository orderRepository;
@@ -25,6 +27,19 @@ public class OrderStatusScheduler {
 
         for (Order order : shippingOrders) {
             order.setOrderStatus(OrderStatus.COMPLETED);
+        }
+    }
+
+
+    @Scheduled(fixedDelay = 60 * 1000) // 1분마다 실행
+    @Transactional
+    public void markFailedOrders() {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
+        List<Order> expiredOrders = orderRepository.findByOrderStatusAndOrderAtBefore(OrderStatus.PENDING, threshold);
+
+        for (Order order : expiredOrders) {
+            order.setOrderStatus(OrderStatus.FAILED);
+            log.info("결제 실패로 전환된 주문: id={}, 생성시각={}", order.getId(), order.getOrderAt());
         }
     }
 }
