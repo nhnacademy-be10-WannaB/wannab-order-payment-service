@@ -84,7 +84,9 @@ public class Order {
         this.shippedAt = shippedAt;
         this.orderStatus = OrderStatus.PENDING;
         this.deliveryWant = deliveryRequestAt;
-        this.userId = userId;
+        if (userId > 0) {
+            this.userId = userId;
+        }
         this.totalBookPrice = totalBookPrice;
         this.totalDiscountAmount = totalDiscountAmount;
         this.shippingFee = shippingFee;
