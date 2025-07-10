@@ -41,6 +41,9 @@ dbcp2:
     max-total: 5
     max-idle: 5
     min-idle: 5
+    between-eviction-millis: 300000
+    min-evictable-idle-millis: 600000
+    num-tests-per-eviction-run: 3
 
 server:
   port: 10392
