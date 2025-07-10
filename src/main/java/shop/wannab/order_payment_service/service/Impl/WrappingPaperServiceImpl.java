@@ -41,13 +41,13 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     //포장지 수정
     @Transactional
     @Override
-    public WrappingPaper updateWrappingPaper(Long wpId, WrappingPaperRequest request) {
+    public WrappingPaper updateWrappingPaper(Long id, WrappingPaperRequest request) {
 
-        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
+        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(id).orElseThrow(()-> new WrappingPaperNotFoundException(id));
 
         //이름 중복검사
         wrappingPaperRepository.findByName(request.getName()).ifPresent(wp -> {
-            if(!wp.getId().equals(wpId)){
+            if(!wp.getId().equals(id)){
                 throw new WrappingPaperAlreadyExistsException(request.getName());
             }
         });
@@ -61,8 +61,8 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     //포장지 삭제
     @Transactional
     @Override
-    public void deleteWrappingPaper(Long wpId) {
-        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
+    public void deleteWrappingPaper(Long id) {
+        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(id).orElseThrow(()-> new WrappingPaperNotFoundException(id));
 
         wrappingPaperRepository.delete(wrappingPaper);
     }

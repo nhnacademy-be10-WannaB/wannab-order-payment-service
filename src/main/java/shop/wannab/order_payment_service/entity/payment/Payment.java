@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import shop.wannab.order_payment_service.entity.Order;
+import shop.wannab.order_payment_service.entity.PaymentProvider;
 
 @Getter
 @Setter
@@ -40,6 +41,8 @@ public class Payment {
     private LocalDateTime requestAt;
 
     private LocalDateTime approvedAt;
+
+    private PaymentProvider paymentProvider;
 
     @OneToOne
     @JoinColumn(name = "order_id")
