@@ -502,7 +502,7 @@ public class OrderService {
 
         //환불 포인트 값 보내주기
         if (refundPoint > 0) {
-            userClient.refundPoint(userId, refundPoint);
+            userClient.refundPoint(orderId, refundPoint);
         }
 
         // 상태 변경

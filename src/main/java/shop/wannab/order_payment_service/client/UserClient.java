@@ -23,7 +23,7 @@ public interface UserClient {
 
     //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
     @PostMapping("/api/users/points/refund")
-    void refundPoint(@RequestHeader("X-USER-ID") Long headerUserId,
+    void refundPoint(@RequestParam("order-id") Long orderId,
                      @RequestParam("amount") int refundPoint);
 
 //    // 이메일 (보류)
