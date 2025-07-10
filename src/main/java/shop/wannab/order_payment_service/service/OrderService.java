@@ -331,8 +331,8 @@ public class OrderService {
                             info.getBookId(),
                             info.getTitle(),
                             quantity,
-                            totalPrice
-                            //info.getThumbnailUrl()
+                            totalPrice,
+                            info.getThumbnailUrl()
                     );
                 }).toList();
 
