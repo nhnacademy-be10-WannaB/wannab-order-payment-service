@@ -11,5 +11,5 @@ public class OrderBookDetailResponse {
     private final String title;
     private final int quantity;
     private final int bookTotalPrice; //도서마다 총가격 (도서개당가격 * quantity)
-    //private final String thumbnailUrl;
+    private final String thumbnailUrl;
 }
