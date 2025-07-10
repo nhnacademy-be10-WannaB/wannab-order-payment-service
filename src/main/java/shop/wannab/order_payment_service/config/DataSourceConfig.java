@@ -1,5 +1,6 @@
 package shop.wannab.order_payment_service.config;
 
+import java.time.Duration;
 import javax.sql.DataSource;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,9 @@ public class DataSourceConfig {
     private Integer maxTotal;
     private Integer initialSize;
     private Integer minIdle;
+    private Long betweenEvictionMillis;
+    private Long minEvictableIdleMillis;
+    private Integer numTestsPerEvictionRun;
 
     @Bean
     public DataSource dataSource() {
@@ -37,8 +41,13 @@ public class DataSourceConfig {
 
         basicDataSource.setValidationQuery("SELECT 1");
         basicDataSource.setTestOnReturn(true);
-        basicDataSource.setTestOnBorrow(false);
+        basicDataSource.setTestOnBorrow(true);
         basicDataSource.setTestWhileIdle(true);
+
+        basicDataSource.setDurationBetweenEvictionRuns(Duration.ofMinutes(betweenEvictionMillis));
+        basicDataSource.setMinEvictableIdle(Duration.ofMinutes(minEvictableIdleMillis));
+        basicDataSource.setNumTestsPerEvictionRun(numTestsPerEvictionRun);
+
 
         return basicDataSource;
     }
