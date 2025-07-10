@@ -14,17 +14,17 @@ public interface CouponClient {
 
     @PostMapping("/api/coupons/order")
     ResponseEntity<ApplicableCouponsDto> getApplicableCoupons(
-            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-USER-ID") Long userId,
             @RequestBody OrderCouponsRequestDto orderCouponsRequestDtoList);
 
     @PostMapping("/api/coupons/order/apply")
     ResponseEntity<List<TryApplyCouponsResponseDto>> getApplyCoupons(
-            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-USER-ID") Long userId,
             @RequestBody TryApplyCouponsRequestDto tryApplyCouponsRequestDtoMap
             );
 
     @PostMapping("/api/coupons/order/success")
     ResponseEntity<Void> processUsedCoupons(
-            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-USER-ID") Long userId,
             @RequestBody CouponUsageRequestDto requestDto);
 }
