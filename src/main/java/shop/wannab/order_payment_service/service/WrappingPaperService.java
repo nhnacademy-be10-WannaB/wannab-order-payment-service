@@ -11,10 +11,10 @@ public interface WrappingPaperService {
     WrappingPaper creatWrappingPaper(WrappingPaperRequest request);
 
     //포장지 수정
-    WrappingPaper updateWrappingPaper(Long id, WrappingPaperRequest request);
+    WrappingPaper updateWrappingPaper(Long wpId, WrappingPaperRequest request);
 
     //포장지 삭제
-    void deleteWrappingPaper(Long id);
+    void deleteWrappingPaper(Long wpId);
 
     //포장지 목록 조회 (전체조회) -> 나중에 필요하면 페이징 구현
     List<WrappingPaperResponse> getWrappingPaperList();
