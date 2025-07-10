@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WrappingPaperResponse {
-    private Long wpId; // 포장지 옵션 ID
+    private Long id; // 포장지 옵션 ID
     private String name; // 포장지 이름
     private int price; // 포장지 가격
 }
