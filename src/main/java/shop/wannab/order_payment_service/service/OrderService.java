@@ -39,13 +39,15 @@ public class OrderService {
     private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
+        log.debug("Order Service : createOrderPageRequestDto");
         OrderBookInfoListDto orderBookInfos = bookClient.getOrderBookInfos(orderItemListDto);
         int totalBookPrice = getTotalBookPrice(orderBookInfos);
         int shippingFee = getShippingFee(totalBookPrice);
         int userPoints = 0;
         List<UserAddressResponse> userAddresses = List.of();
-
+        log.debug("Before wrappingPaperService Call");
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
+        log.debug("After wrappingPaperService Call");
         if (userId > 0) {
             userPoints = userClient.getUserPoints(userId);
             userAddresses = userClient.getAllAddresses(userId);
@@ -497,7 +499,7 @@ public class OrderService {
 
         //환불 포인트 값 보내주기
         if (refundPoint > 0) {
-            userClient.refundPoint(userId, refundPoint);
+            userClient.refundPoint(orderId, refundPoint);
         }
 
         // 상태 변경

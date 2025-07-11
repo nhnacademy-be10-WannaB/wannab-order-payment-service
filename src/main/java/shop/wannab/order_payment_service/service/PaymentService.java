@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.TossPaymentsApiClient;
 import shop.wannab.order_payment_service.entity.Order;
 import shop.wannab.order_payment_service.entity.OrderStatus;
+import shop.wannab.order_payment_service.entity.PaymentProvider;
 import shop.wannab.order_payment_service.entity.payment.Cancel;
 import shop.wannab.order_payment_service.entity.payment.Payment;
 import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
@@ -67,6 +68,7 @@ public class PaymentService {
                     tossResponse.getStatus(),
                     requestedAt,
                     approvedAt,
+                    PaymentProvider.TOSS,
                     orderRepository.findById(orderId).orElse(null)
             );
 

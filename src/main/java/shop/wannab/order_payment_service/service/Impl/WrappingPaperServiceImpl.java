@@ -3,6 +3,7 @@ package shop.wannab.order_payment_service.service.Impl;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.WrappingPaper;
@@ -14,6 +15,7 @@ import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.WrappingPaperService;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WrappingPaperServiceImpl implements WrappingPaperService {
@@ -41,13 +43,13 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     //포장지 수정
     @Transactional
     @Override
-    public WrappingPaper updateWrappingPaper(Long wpId, WrappingPaperRequest request) {
+    public WrappingPaper updateWrappingPaper(Long id, WrappingPaperRequest request) {
 
-        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
+        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(id).orElseThrow(()-> new WrappingPaperNotFoundException(id));
 
         //이름 중복검사
         wrappingPaperRepository.findByName(request.getName()).ifPresent(wp -> {
-            if(!wp.getId().equals(wpId)){
+            if(!wp.getId().equals(id)){
                 throw new WrappingPaperAlreadyExistsException(request.getName());
             }
         });
@@ -61,8 +63,8 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     //포장지 삭제
     @Transactional
     @Override
-    public void deleteWrappingPaper(Long wpId) {
-        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(wpId).orElseThrow(()-> new WrappingPaperNotFoundException(wpId));
+    public void deleteWrappingPaper(Long id) {
+        WrappingPaper wrappingPaper = wrappingPaperRepository.findById(id).orElseThrow(()-> new WrappingPaperNotFoundException(id));
 
         wrappingPaperRepository.delete(wrappingPaper);
     }
@@ -71,7 +73,7 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     @Transactional(readOnly = true)
     @Override
     public List<WrappingPaperResponse> getWrappingPaperList() {
-
+        log.debug("WrappingPaperService Impl : GetWrappingPaperList");
 
         //DTO반환을 위해 매핑처리
         return wrappingPaperRepository.findAll().stream()
