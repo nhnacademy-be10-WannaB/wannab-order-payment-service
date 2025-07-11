@@ -3,6 +3,7 @@ package shop.wannab.order_payment_service.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +19,7 @@ import shop.wannab.order_payment_service.entity.dto.WrappingPaperRequest;
 import shop.wannab.order_payment_service.entity.dto.WrappingPaperResponse;
 import shop.wannab.order_payment_service.service.WrappingPaperService;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/wrapping-papers")
@@ -58,6 +60,7 @@ public class WrappingPaperController {
     //포장지조회
     @GetMapping
     public ResponseEntity<List<WrappingPaperResponse>> getWrappingPaperList(){
+        log.debug("포장지 조회 : getWrappingPaperList");
         List<WrappingPaperResponse> list = wrappingPaperService.getWrappingPaperList();
         return ResponseEntity.ok(list);
     }

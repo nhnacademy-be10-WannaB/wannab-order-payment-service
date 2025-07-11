@@ -2,21 +2,34 @@ package shop.wannab.order_payment_service.controller;
 
 import feign.FeignException;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import shop.wannab.order_payment_service.client.BookClient;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.RefundReason;
-import shop.wannab.order_payment_service.entity.dto.*;
+import shop.wannab.order_payment_service.entity.dto.GuestOrderRequest;
+import shop.wannab.order_payment_service.entity.dto.OrderDetailResponse;
+import shop.wannab.order_payment_service.entity.dto.OrderInfoForPayment;
+import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
+import shop.wannab.order_payment_service.entity.dto.OrderLookupResponse;
+import shop.wannab.order_payment_service.entity.dto.OrderPageRequestDto;
+import shop.wannab.order_payment_service.entity.dto.OrderSearchDto;
+import shop.wannab.order_payment_service.entity.dto.OrderSubmitDto;
 import shop.wannab.order_payment_service.service.OrderService;
 
-import java.util.Objects;
-
-
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -27,8 +40,12 @@ public class OrderController {
     @PostMapping("/orders")
     public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
         try {
+            log.debug("OrderController /api/orders getNecessaryOrderInfo");
+            log.debug("before validateOrderItems");
             bookClient.validateOrderItems(orderItemListDto);
+            log.debug("after validateOrderItems");
         } catch (FeignException.BadRequest e) {
+            log.debug("FeignException : {}", e.getMessage());
             throw e;
         }
         if (Objects.nonNull(userId)) {

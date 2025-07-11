@@ -3,6 +3,7 @@ package shop.wannab.order_payment_service.service.Impl;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.WrappingPaper;
@@ -14,6 +15,7 @@ import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
 import shop.wannab.order_payment_service.service.WrappingPaperService;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WrappingPaperServiceImpl implements WrappingPaperService {
@@ -71,7 +73,7 @@ public class WrappingPaperServiceImpl implements WrappingPaperService {
     @Transactional(readOnly = true)
     @Override
     public List<WrappingPaperResponse> getWrappingPaperList() {
-
+        log.debug("WrappingPaperService Impl : GetWrappingPaperList");
 
         //DTO반환을 위해 매핑처리
         return wrappingPaperRepository.findAll().stream()

@@ -1,9 +1,6 @@
 package shop.wannab.order_payment_service.service;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -44,13 +41,15 @@ public class OrderService {
     private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
+        log.debug("Order Service : createOrderPageRequestDto");
         OrderBookInfoListDto orderBookInfos = bookClient.getOrderBookInfos(orderItemListDto);
         int totalBookPrice = getTotalBookPrice(orderBookInfos);
         int shippingFee = getShippingFee(totalBookPrice);
         int userPoints = 0;
         List<UserAddressResponse> userAddresses = List.of();
-
+        log.debug("Before wrappingPaperService Call");
         List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
+        log.debug("After wrappingPaperService Call");
         if (userId > 0) {
             userPoints = userClient.getUserPoints(userId);
             userAddresses = userClient.getAllAddresses(userId);
