@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,7 @@ import shop.wannab.order_payment_service.client.UserClient;
 import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
+import shop.wannab.order_payment_service.event.OrderCreatedEvent;
 import shop.wannab.order_payment_service.repository.*;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
@@ -36,6 +38,8 @@ public class OrderService {
     private final OrderBookRepository orderBookRepository;
     private final WrappingPaperRepository wrappingPaperRepository;
     private final OrderItemTempRedisRepository orderItemTempRedisRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
     private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
@@ -79,9 +83,6 @@ public class OrderService {
 
         OrderItemListDto itemListDto = new OrderItemListDto(itemList);
         bookClient.validateOrderItems(itemListDto);
-
-        //------- 검증 끝-------//
-        bookClient.decreaseStock(itemListDto);
 
         List<Long> bookIds = orderSubmitDto.getBookOrderSubmitDtos().stream().map(BookOrderSubmitDto::getBookId).toList();
         BookIdTitlePriceListDto bookSimpleInfos = bookClient.getBookSimpleInfos(new BookIdListDto(bookIds));
@@ -147,6 +148,7 @@ public class OrderService {
         }
         int payAmount = order.getTotalPrice();
 
+        eventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), itemListDto));
         OrderInfoForPayment orderInfoForPayment = new OrderInfoForPayment(order.getId(), orderName, payAmount);
         return orderInfoForPayment;
     }
