@@ -37,8 +37,25 @@ public class OrderController {
     private final BookClient bookClient;
     private final OrderService orderService;
 
+    @PostMapping("/orders/items")
+    void produceOrderPageDto(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
+        if (Objects.nonNull(userId)) {
+            orderService.saveTemporaryOrderInfo(userId, orderItemListDto);
+        } else if (Objects.isNull(userId) && Objects.nonNull(guestId)) {
+            orderService.saveTemporaryOrderInfo(guestId, orderItemListDto);
+        }
+    }
+
     @PostMapping("/orders")
-    public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
+    public OrderPageRequestDto consumeOrderPageDto(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId) {
+        OrderItemListDto orderItemListDto = null;
+
+        if (Objects.nonNull(userId)) {
+            orderItemListDto = orderService.consumeTemporaryOrderInfo(userId);
+        } else if (Objects.isNull(userId) && Objects.nonNull(guestId)) {
+            orderItemListDto = orderService.consumeTemporaryOrderInfo(guestId);
+        }
+
         try {
             log.debug("OrderController /api/orders getNecessaryOrderInfo");
             log.debug("before validateOrderItems");
@@ -148,6 +165,5 @@ public class OrderController {
         boolean result = orderService.isReviewable(userId, bookId);
         return ResponseEntity.ok(result);
     }
-
 
 }
