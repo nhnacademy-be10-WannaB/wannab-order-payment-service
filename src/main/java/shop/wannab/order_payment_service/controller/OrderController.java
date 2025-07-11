@@ -2,10 +2,8 @@ package shop.wannab.order_payment_service.controller;
 
 import feign.FeignException;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import shop.wannab.order_payment_service.client.BookClient;
@@ -24,8 +22,25 @@ public class OrderController {
     private final BookClient bookClient;
     private final OrderService orderService;
 
+    @PostMapping("/orders/items")
+    void produceOrderPageDto(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
+        if (Objects.nonNull(userId)) {
+            orderService.saveTemporaryOrderInfo(userId, orderItemListDto);
+        } else if (Objects.isNull(userId) && Objects.nonNull(guestId)) {
+            orderService.saveTemporaryOrderInfo(guestId, orderItemListDto);
+        }
+    }
+
     @PostMapping("/orders")
-    public OrderPageRequestDto getNecesaryOrderInfo(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderItemListDto orderItemListDto) {
+    public OrderPageRequestDto consumeOrderPageDto(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId) {
+        OrderItemListDto orderItemListDto = null;
+
+        if (Objects.nonNull(userId)) {
+            orderItemListDto = orderService.consumeTemporaryOrderInfo(userId);
+        } else if (Objects.isNull(userId) && Objects.nonNull(guestId)) {
+            orderItemListDto = orderService.consumeTemporaryOrderInfo(guestId);
+        }
+
         try {
             bookClient.validateOrderItems(orderItemListDto);
         } catch (FeignException.BadRequest e) {
@@ -131,6 +146,5 @@ public class OrderController {
         boolean result = orderService.isReviewable(userId, bookId);
         return ResponseEntity.ok(result);
     }
-
 
 }

@@ -1,9 +1,6 @@
 package shop.wannab.order_payment_service.service;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +17,7 @@ import shop.wannab.order_payment_service.client.UserClient;
 import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
-import shop.wannab.order_payment_service.repository.GuestRepository;
-import shop.wannab.order_payment_service.repository.OrderBookRepository;
-import shop.wannab.order_payment_service.repository.OrderRepository;
-import shop.wannab.order_payment_service.repository.WrappingPaperRepository;
+import shop.wannab.order_payment_service.repository.*;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
 @Slf4j
@@ -41,6 +35,7 @@ public class OrderService {
     private final GuestRepository guestRepository;
     private final OrderBookRepository orderBookRepository;
     private final WrappingPaperRepository wrappingPaperRepository;
+    private final OrderItemTempRedisRepository orderItemTempRedisRepository;
     private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
@@ -559,6 +554,13 @@ public class OrderService {
         );
     }
 
+    public void saveTemporaryOrderInfo(long customerId, OrderItemListDto dto) {
+        orderItemTempRedisRepository.saveTemporaryOrderInfo(customerId, dto);
+    }
 
+    public OrderItemListDto consumeTemporaryOrderInfo(long customerId) {
+        List<CartItem> orderItems = orderItemTempRedisRepository.consumeOrderItems(customerId);
+        return new OrderItemListDto(orderItems);
+    }
 
 }
