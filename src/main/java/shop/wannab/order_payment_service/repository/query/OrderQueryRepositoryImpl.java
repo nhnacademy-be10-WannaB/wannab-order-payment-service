@@ -57,7 +57,7 @@ public class OrderQueryRepositoryImpl implements OrderQueryRepository{
 
         //계산로직
         NumberExpression<Integer> totalPriceExpr = order.totalBookPrice
-                .add(order.totalWrappingPrice)
+                .add(order.totalPavingPrice)
                 .add(order.shippingFee)
                 .subtract(order.totalDiscountAmount);
 

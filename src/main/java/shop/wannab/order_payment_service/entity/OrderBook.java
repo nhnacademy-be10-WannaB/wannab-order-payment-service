@@ -36,8 +36,8 @@ public class OrderBook {
     @Column(name = "book_price")
     private int bookPrice;
 
-    @Column(name = "wp_price")
-    private int wrappingPrice = 0;
+    @Column(name = "paving_price")
+    private int pavingPrice = 0;
 
 
     @NotNull
@@ -52,17 +52,17 @@ public class OrderBook {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wp_id")
-    private WrappingPaper wrappingPaper;
+    @JoinColumn(name = "paving_id")
+    private Paving paving;
 
-    public OrderBook(Order order, long bookId, WrappingPaper wrappingPaper, int quantity, int pricePerBook) {
+    public OrderBook(Order order, long bookId, Paving paving, int quantity, int pricePerBook) {
         this.order = order;
         this.bookId = bookId;
-        this.wrappingPaper = wrappingPaper;
+        this.paving = paving;
         this.quantity = quantity;
         this.bookPrice = pricePerBook;
-        if (Objects.nonNull(this.wrappingPaper)) {
-            this.wrappingPrice = wrappingPaper.getPrice();
+        if (Objects.nonNull(this.paving)) {
+            this.pavingPrice = paving.getPrice();
         }
 
     }

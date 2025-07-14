@@ -14,7 +14,7 @@ import java.util.List;
 public class OrderPageRequestDto {
     private OrderBookInfoListDto orderBookInfoListDto;
     private List<UserAddressResponse> userAddressList;
-    private List<WrappingPaperResponse> wrappingPaperList;
+    private List<PavingResponse> pavingList;
     private int totalBookPrice;
     private int shippingFee;
     private int userPoints;

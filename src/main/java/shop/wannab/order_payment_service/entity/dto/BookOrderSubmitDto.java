@@ -11,7 +11,7 @@ public class BookOrderSubmitDto {
     private long bookId;
     @Min(value = 1)
     private int bookQuantity;
-    private Long wrappingPaperId;
+    private Long pavingId;
     private Long appliedCouponId;
 
 }
