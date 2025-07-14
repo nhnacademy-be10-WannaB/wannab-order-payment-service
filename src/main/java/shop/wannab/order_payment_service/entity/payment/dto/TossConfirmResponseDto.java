@@ -20,4 +20,15 @@ public class TossConfirmResponseDto {
     private String requestedAt;
     private String approvedAt;
     private String orderId;
+
+    private TossFailureDto failure;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TossFailureDto {
+        private String code;
+        private String message;
+    }
 }
