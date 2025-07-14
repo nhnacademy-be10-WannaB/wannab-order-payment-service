@@ -131,7 +131,7 @@ public class OrderService {
 
         if (userId > 0) { //회원일시
             try {//TODO: rabbitmq 적용
-                userClient.processPoints(new PointProcessRequest(userId, order.getId(), orderSubmitDto.getUsedPoints(), order.getTotalPrice()));
+                userClient.createPointHistory(new PointHistoryCreateDTO(userId, orderSubmitDto.getUsedPoints(), order.getTotalPrice(), order.getId()));
 
             } catch (RuntimeException e) {
             //log.warn("포인트 적립 실패: userId={}, orderId={}", userId, orderId);
