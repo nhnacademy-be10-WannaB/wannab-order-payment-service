@@ -15,7 +15,7 @@ public class OrderBookResponse {
     private final String thumbnailUrl;
     private final int quantity;
     private final int bookPrice;
-    private final List<WrappingPaperResponse> wrappingPapers;
+    private final List<PavingResponse> pavings;
 
 
     //회원

@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,7 @@ import shop.wannab.order_payment_service.client.UserClient;
 import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
+import shop.wannab.order_payment_service.event.OrderCreatedEvent;
 import shop.wannab.order_payment_service.repository.*;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
@@ -27,15 +29,17 @@ public class OrderService {
     private final DeliveryPolicyService deliveryPolicyService;
     private final UserClient userClient;
     private final BookClient bookClient;
-    private final WrappingPaperService wrappingPaperService;
+    private final PavingService pavingService;
     private final PaymentService paymentService;
     private final CouponClient couponClient;
 
     private final OrderRepository orderRepository;
     private final GuestRepository guestRepository;
     private final OrderBookRepository orderBookRepository;
-    private final WrappingPaperRepository wrappingPaperRepository;
+    private final PavingRepository pavingRepository;
     private final OrderItemTempRedisRepository orderItemTempRedisRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
     private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
@@ -45,9 +49,9 @@ public class OrderService {
         int shippingFee = getShippingFee(totalBookPrice);
         int userPoints = 0;
         List<UserAddressResponse> userAddresses = List.of();
-        log.debug("Before wrappingPaperService Call");
-        List<WrappingPaperResponse> wrappingPaperList = wrappingPaperService.getWrappingPaperList();
-        log.debug("After wrappingPaperService Call");
+        log.debug("Before PavingService Call");
+        List<PavingResponse> pavingList = pavingService.getPavingList();
+        log.debug("After PavingService Call");
         if (userId > 0) {
             userPoints = userClient.getUserPoints(userId);
             userAddresses = userClient.getAllAddresses(userId);
@@ -62,10 +66,10 @@ public class OrderService {
                 orderBookInfo.setApplicableCoupons(bookApplicableCoupons);
 
             }
-            OrderPageRequestDto orderPageRequestDto = new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, orderCouponDtos, userId);
+            OrderPageRequestDto orderPageRequestDto = new OrderPageRequestDto(orderBookInfos, userAddresses, pavingList, totalBookPrice, shippingFee, userPoints, orderCouponDtos, userId);
             return orderPageRequestDto;
         }
-        return new OrderPageRequestDto(orderBookInfos, userAddresses, wrappingPaperList, totalBookPrice, shippingFee, userPoints, List.of(), userId);
+        return new OrderPageRequestDto(orderBookInfos, userAddresses, pavingList, totalBookPrice, shippingFee, userPoints, List.of(), userId);
 
     }
 
@@ -79,9 +83,6 @@ public class OrderService {
 
         OrderItemListDto itemListDto = new OrderItemListDto(itemList);
         bookClient.validateOrderItems(itemListDto);
-
-        //------- 검증 끝-------//
-        bookClient.decreaseStock(itemListDto);
 
         List<Long> bookIds = orderSubmitDto.getBookOrderSubmitDtos().stream().map(BookOrderSubmitDto::getBookId).toList();
         BookIdTitlePriceListDto bookSimpleInfos = bookClient.getBookSimpleInfos(new BookIdListDto(bookIds));
@@ -99,7 +100,7 @@ public class OrderService {
             getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
         }
         int shippingFee = getShippingFee(totalBookPrice);
-        int totalWrappingPaperPrice = getTotalWrappingPaperPrice(orderSubmitDto);
+        int totalPavingPrice = getTotalPavingPrice(orderSubmitDto);
         String orderName = createOrderName(bookSimpleInfos.getIdTitlePriceDtos().get(0).getTitle(), bookIds.size());
         Order order = new Order(userId,
                 orderName,
@@ -108,7 +109,7 @@ public class OrderService {
                 orderSubmitDto.getDeliveryRequestAt(),
                 totalBookPrice, totalDiscountAmount,
                 shippingFee,
-                totalWrappingPaperPrice,
+                totalPavingPrice,
                 orderSubmitDto.getRecipientName(),
                 orderSubmitDto.getEmail(),
                 orderSubmitDto.getRecipientPhoneNumber(),
@@ -119,11 +120,11 @@ public class OrderService {
         //------- Order_book table record add -------//
         List<OrderBook> orderBooks = new ArrayList<>();
         for (BookOrderSubmitDto bookOrderSubmitDto : orderSubmitDto.getBookOrderSubmitDtos()) {
-            WrappingPaper wrappingPaper = null;
-            if (Objects.nonNull(bookOrderSubmitDto.getWrappingPaperId())) {
-                wrappingPaper= wrappingPaperRepository.findById(bookOrderSubmitDto.getWrappingPaperId()).orElse(null);
+            Paving paving = null;
+            if (Objects.nonNull(bookOrderSubmitDto.getPavingId())) {
+                paving = pavingRepository.findById(bookOrderSubmitDto.getPavingId()).orElse(null);
             }
-            OrderBook orderBook = new OrderBook(order, bookOrderSubmitDto.getBookId(), wrappingPaper, bookOrderSubmitDto.getBookQuantity(), bookIdPriceMap.get(bookOrderSubmitDto.getBookId()));
+            OrderBook orderBook = new OrderBook(order, bookOrderSubmitDto.getBookId(), paving, bookOrderSubmitDto.getBookQuantity(), bookIdPriceMap.get(bookOrderSubmitDto.getBookId()));
             orderBooks.add(orderBook);
         }
         orderBookRepository.saveAll(orderBooks);
@@ -147,6 +148,7 @@ public class OrderService {
         }
         int payAmount = order.getTotalPrice();
 
+        eventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), itemListDto));
         OrderInfoForPayment orderInfoForPayment = new OrderInfoForPayment(order.getId(), orderName, payAmount);
         return orderInfoForPayment;
     }
@@ -185,17 +187,17 @@ public class OrderService {
         return shippingFee;
     }
 
-    private int getTotalWrappingPaperPrice(OrderSubmitDto submitDto) {
-        int totalWrappingPaperPrice = 0;
+    private int getTotalPavingPrice(OrderSubmitDto submitDto) {
+        int totalPavingPrice = 0;
         List<BookOrderSubmitDto> bookOrderSubmitDtos = submitDto.getBookOrderSubmitDtos();
         for (BookOrderSubmitDto dto : bookOrderSubmitDtos) {
-            if (Objects.isNull(dto.getWrappingPaperId()) || dto.getWrappingPaperId() == 0L) {
+            if (Objects.isNull(dto.getPavingId()) || dto.getPavingId() == 0L) {
                 continue;
             }
-            WrappingPaper wrappingPaper = wrappingPaperRepository.findById(dto.getWrappingPaperId()).orElseThrow(() -> new RuntimeException("잘못된 포장지 아이디"));
-            totalWrappingPaperPrice += wrappingPaper.getPrice();
+            Paving paving = pavingRepository.findById(dto.getPavingId()).orElseThrow(() -> new RuntimeException("잘못된 포장지 아이디"));
+            totalPavingPrice += paving.getPrice();
         }
-        return totalWrappingPaperPrice;
+        return totalPavingPrice;
     }
 
 //    private LocalDateTime getShippingDate() { //출고일 정책
@@ -341,7 +343,7 @@ public class OrderService {
                 order.getTotalPrice(),
                 order.getShippingFee(),
                 order.getTotalDiscountAmount(),
-                order.getTotalWrappingPrice(),
+                order.getTotalPavingPrice(),
                 order.getRecipientName()
         );
     }

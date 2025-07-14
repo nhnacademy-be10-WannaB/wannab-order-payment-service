@@ -55,8 +55,8 @@ public class Order {
     @Column(name = "shipping_fee")
     private int shippingFee;
 
-    @Column(name = "total_wrapping_price")
-    private int totalWrappingPrice;
+    @Column(name = "total_paving_price")
+    private int totalPavingPrice;
 
     @Column(name = "user_id")
     private Long userId;
@@ -78,7 +78,7 @@ public class Order {
     private String recipientAddress;
 
 
-    public Order(Long userId, String orderName, LocalDateTime shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalWrappingPaperPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
+    public Order(Long userId, String orderName, LocalDateTime shippedAt, LocalDate deliveryRequestAt, int totalBookPrice, int totalDiscountAmount, int shippingFee, int totalPavingPrice, String recipientName, String recipientEmail, String recipientPhoneNumber, String recipientAddress) {
         this.orderAt =  LocalDateTime.now();
         this.orderName = orderName;
         this.shippedAt = shippedAt;
@@ -90,7 +90,7 @@ public class Order {
         this.totalBookPrice = totalBookPrice;
         this.totalDiscountAmount = totalDiscountAmount;
         this.shippingFee = shippingFee;
-        this.totalWrappingPrice = totalWrappingPaperPrice;
+        this.totalPavingPrice = totalPavingPrice;
         this.recipientName = recipientName;
         this.recipientEmail = recipientEmail;
         this.recipientPhoneNumber = recipientPhoneNumber;
@@ -100,7 +100,7 @@ public class Order {
     //총 결제금액 계산
     public int getTotalPrice() {
         return totalBookPrice
-                + totalWrappingPrice
+                + totalPavingPrice
                 + shippingFee
                 - totalDiscountAmount;
     }

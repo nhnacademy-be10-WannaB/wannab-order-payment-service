@@ -20,7 +20,7 @@ public class OrderDetailResponse {
     private final int totalPrice;           //총 주문금액
     private final int shippingFee;  //배송비
     private final int totalDiscount;    //총 할인가격
-    private final int totalWrappinpPrice;   //총 포장지가격
+    private final int totalPavingPrice;   //총 포장지가격
     private final String name; //주문자성함
 
 
