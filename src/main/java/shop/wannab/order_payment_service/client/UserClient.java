@@ -18,7 +18,7 @@ public interface UserClient {
     @PostMapping("/api/users/points/process")
     void processPoints(@RequestBody PointProcessRequest pointProcessRequest);
 
-    @PostMapping("/api/users/points/orders/{order-id}/cancle")
+    @PostMapping("/api/users/points/orders/{order-id}/cancel")
     void cancleOrderPointProcess(@PathVariable("order-id") Long orderId);
 
     //주문 취소시 포인트 반환(반환받을 포인트값만 던져줌)
