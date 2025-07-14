@@ -33,9 +33,11 @@ public class OrderBook {
     @Column(name = "ob_quantity")
     private Integer quantity;
 
+    @NotNull
     @Column(name = "book_price")
     private int bookPrice;
 
+    @NotNull
     @Column(name = "paving_price")
     private int pavingPrice = 0;
 

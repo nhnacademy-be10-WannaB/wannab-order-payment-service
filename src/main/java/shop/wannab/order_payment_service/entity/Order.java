@@ -46,15 +46,18 @@ public class Order {
     @Column(name = "order_status")
     private OrderStatus orderStatus;
 
+    @NotNull
     @Column(name = "total_book_price")
     private int totalBookPrice;
 
+    @NotNull
     @Column(name = "total_discount_amount")
     private int totalDiscountAmount;
 
     @Column(name = "shipping_fee")
     private int shippingFee;
 
+    @NotNull
     @Column(name = "total_paving_price")
     private int totalPavingPrice;
 
