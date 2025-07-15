@@ -12,8 +12,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
     public static final String EXCHANGE = "wannab.order.exchange";
-    public static final String ORDER_CREATED_QUEUE = "wannab.order.created.queue";
-    public static final String ROUTING_KEY = "order.created";
+
+    public static final String ORDER_CREATED_BOOK_QUEUE = "wannab.order.created.book.queue";
+    public static final String ORDER_CREATED_USER_QUEUE = "wannab.order.created.user.queue";
+    public static final String ORDER_CREATED_COUPON_QUEUE = "wannab.order.created.coupon.queue";
+
+    public static final String BOOK_ROUTING_KEY = "order.created.book";
+    public static final String USER_ROUTING_KEY = "order.created.user";
+    public static final String COUPON_ROUTING_KEY = "order.created.coupon";
 
     @Bean
     public TopicExchange exchange() {
@@ -21,13 +27,33 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue orderCreatedQueue() {
-        return new Queue(ORDER_CREATED_QUEUE);
+    public Queue orderCreatedBookQueue() {
+        return new Queue(ORDER_CREATED_BOOK_QUEUE);
     }
 
     @Bean
-    public Binding bindingProduct() {
-        return BindingBuilder.bind(orderCreatedQueue()).to(exchange()).with(ROUTING_KEY);
+    public Queue orderCreatedUserQueue() {
+        return new Queue(ORDER_CREATED_USER_QUEUE);
+    }
+
+    @Bean
+    public Queue orderCreatedCouponQueue() {
+        return new Queue(ORDER_CREATED_COUPON_QUEUE);
+    }
+
+    @Bean
+    public Binding bindingBook() {
+        return BindingBuilder.bind(orderCreatedBookQueue()).to(exchange()).with(BOOK_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding bindingUser() {
+        return BindingBuilder.bind(orderCreatedUserQueue()).to(exchange()).with(USER_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding bindingCoupon() {
+        return BindingBuilder.bind(orderCreatedCouponQueue()).to(exchange()).with(COUPON_ROUTING_KEY);
     }
 
     @Bean

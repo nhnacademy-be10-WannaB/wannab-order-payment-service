@@ -57,10 +57,7 @@ public class OrderController {
         }
 
         try {
-            log.debug("OrderController /api/orders getNecessaryOrderInfo");
-            log.debug("before validateOrderItems");
             bookClient.validateOrderItems(orderItemListDto);
-            log.debug("after validateOrderItems");
         } catch (FeignException.BadRequest e) {
             log.debug("FeignException : {}", e.getMessage());
             throw e;

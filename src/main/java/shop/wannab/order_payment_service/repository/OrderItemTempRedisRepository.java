@@ -25,7 +25,7 @@ public class OrderItemTempRedisRepository {
         }
     }
 
-    public List<CartItem> consumeOrderItems(Long customerId) {
+    public List<CartItem> getOrderItems(Long customerId) {
         List<CartItem> cartItems = new ArrayList<>();
         if (Objects.isNull(customerId)) {
             return cartItems;
@@ -36,10 +36,17 @@ public class OrderItemTempRedisRepository {
         for (Map.Entry<Long, Integer> entry : itemMap.entrySet()) {
             CartItem item = new CartItem(entry.getKey(), entry.getValue());
             cartItems.add(item);
-            redisTemplate.opsForHash().delete(key, item.getBookId());
         }
 
         return cartItems;
+    }
+
+    public void deleteOrderItems(Long customerId) {
+        String key = PREFIX + customerId;
+        Map<Long, Integer> itemMap = redisTemplate.<Long, Integer>opsForHash().entries(key);
+        for (Long bookId : itemMap.keySet()) {
+            redisTemplate.opsForHash().delete(key, bookId);
+        }
     }
 
 
