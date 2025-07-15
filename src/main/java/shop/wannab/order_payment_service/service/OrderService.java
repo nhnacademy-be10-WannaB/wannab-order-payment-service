@@ -286,14 +286,32 @@ public class OrderService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
         return orderRepository.findAllByUserIdAndOrderStatusNot(userId, OrderStatus.FAILED, pageable)
-                .map(order -> new OrderLookupResponse(
-                        order.getId(),
-                        order.getOrderName(),
-                        order.getOrderAt(),
-                        order.getOrderStatus(),
-                        order.getShippedAt(),
-                        order.getTotalPrice()
-                ));
+                .map(order -> {
+                    OrderBook orderBook = orderBookRepository.findTop1ByOrder_IdOrderByObIdAsc(order.getId());
+                    String thumbnailUrl = null;
+
+                    if (orderBook != null) {
+                        // 도서 썸네일 외부에서 받아오기
+                        OrderItemListDto oneBook = new OrderItemListDto(
+                                List.of(new CartItem(orderBook.getBookId(), orderBook.getQuantity()))
+                        );
+                        OrderBookInfoListDto bookInfo = bookClient.getOrderBookInfos(oneBook);
+
+                        if (!bookInfo.getOrderBookInfos().isEmpty()) {
+                            thumbnailUrl = bookInfo.getOrderBookInfos().get(0).getThumbnailUrl();
+                        }
+                    }
+
+                    return new OrderLookupResponse(
+                            order.getId(),
+                            order.getOrderName(),
+                            order.getOrderAt(),
+                            order.getOrderStatus(),
+                            order.getShippedAt(),
+                            order.getTotalPrice(),
+                            thumbnailUrl // 썸네일 포함해서 DTO 리턴
+                    );
+                });
     }
 
     // 쇼핑몰 주문 전체 조회 (관리자용)
@@ -558,9 +576,9 @@ public class OrderService {
     /**
      * 배송완료체크 (리뷰작성목적)
     */
-    public boolean isReviewable(Long userId, Long bookId) {
-        return orderBookRepository.existsByOrder_UserIdAndBookIdAndOrder_OrderStatus(
-                userId, bookId, OrderStatus.COMPLETED
+    public boolean isReviewable(Long orderBookId) {
+        return orderBookRepository.existsByObIdAndOrder_OrderStatus(
+                orderBookId, OrderStatus.COMPLETED
         );
     }
 
