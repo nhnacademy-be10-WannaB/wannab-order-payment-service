@@ -18,15 +18,9 @@ import shop.wannab.order_payment_service.service.PaymentService;
 public class PaymentController {
     private final PaymentService paymentService;
 
-
-    @PostMapping("/success")
+    @PostMapping("/confirm")
     public ResponseEntity<FinalOrderResultDto> confirmAndProcessPayment(@RequestBody TossConfirmRequestDto requestDto) {
-        try {
             FinalOrderResultDto result = paymentService.confirmAndProcessPayment(requestDto);
             return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return ResponseEntity.badRequest().build();
     }
 }
