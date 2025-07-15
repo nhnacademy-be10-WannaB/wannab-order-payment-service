@@ -1,6 +1,8 @@
 package shop.wannab.order_payment_service.entity.payment;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -42,6 +44,7 @@ public class Payment {
 
     private LocalDateTime approvedAt;
 
+    @Enumerated(EnumType.STRING)
     private PaymentProvider paymentProvider;
 
     @OneToOne

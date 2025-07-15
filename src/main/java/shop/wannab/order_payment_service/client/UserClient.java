@@ -2,8 +2,8 @@ package shop.wannab.order_payment_service.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
+import shop.wannab.order_payment_service.entity.dto.PointHistoryCreateDTO;
 import shop.wannab.order_payment_service.entity.dto.UserAddressResponse;
-import shop.wannab.order_payment_service.entity.dto.PointProcessRequest;
 
 import java.util.List;
 
@@ -15,8 +15,8 @@ public interface UserClient {
     @GetMapping("/api/users/addresses")
     List<UserAddressResponse> getAllAddresses(@RequestHeader("X-USER-ID") Long headerUserId);
 
-    @PostMapping("/api/users/points/process")
-    void processPoints(@RequestBody PointProcessRequest pointProcessRequest);
+    @PostMapping("/api/users/points-histories")
+    void createPointHistory(@RequestBody PointHistoryCreateDTO pointHistoryCreateDTO);
 
     @PostMapping("/api/users/points/orders/{order-id}/cancel")
     void cancleOrderPointProcess(@PathVariable("order-id") Long orderId);
@@ -26,11 +26,5 @@ public interface UserClient {
     void refundPoint(@RequestParam("order-id") Long orderId,
                      @RequestParam("amount") int refundPoint);
 
-//    // 이메일 (보류)
-//    @GetMapping("/api/users/{user-id}/email")
-//    String getUserEmail(@PathVariable("user-id") Long userId);
-//
-//    //유저역할 (보류)
-//    @GetMapping("/users/{userId}/role")
-//    String getUserRole(@PathVariable("user-id") Long userId);
+
 }

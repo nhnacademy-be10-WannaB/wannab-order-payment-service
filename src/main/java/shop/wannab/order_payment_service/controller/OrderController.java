@@ -57,10 +57,7 @@ public class OrderController {
         }
 
         try {
-            log.debug("OrderController /api/orders getNecessaryOrderInfo");
-            log.debug("before validateOrderItems");
             bookClient.validateOrderItems(orderItemListDto);
-            log.debug("after validateOrderItems");
         } catch (FeignException.BadRequest e) {
             log.debug("FeignException : {}", e.getMessage());
             throw e;
@@ -161,9 +158,8 @@ public class OrderController {
 
     //리뷰가능여부확인
     @GetMapping("/orders/review-check")
-    public ResponseEntity<Boolean> isReviewable(@RequestParam Long userId, @RequestParam Long bookId) {
-        boolean result = orderService.isReviewable(userId, bookId);
-        return ResponseEntity.ok(result);
+    public boolean isReviewable(@RequestParam Long obId) {
+        return orderService.isReviewable(obId);
     }
 
 }
