@@ -40,6 +40,8 @@ public class PaymentService {
     private final ApplicationEventPublisher eventPublisher;
     private final PointHistoryCreateDtoRepository pointHistoryCreateDtoRepository;
     private final CouponUsageTempRedisRepository couponUsageTempRedisRepository;
+
+
     @Value("${toss.payments.secretKey}")
     private String secretKey;
 
@@ -103,7 +105,7 @@ public class PaymentService {
             couponUsageRequestDto.setUsedCoupons(usedCouponInfos);
             couponUsageRequestDto.setUserId(order.getUserId());
 
-            eventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), order.getUserId(), itemListDto, pointHistoryCreateDTO, couponUsageRequestDto));
+            eventPublisher.publishEvent(new OrderCreatedEvent(order, order.getUserId(), itemListDto, pointHistoryCreateDTO, couponUsageRequestDto));
 
             itemTempRedisRepository.deleteOrderItems(order.getUserId());
 

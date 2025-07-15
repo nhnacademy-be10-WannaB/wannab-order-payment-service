@@ -39,7 +39,7 @@ public class OrderService {
     private final OrderItemTempRedisRepository orderItemTempRedisRepository;
     private final CouponUsageTempRedisRepository couponUsageTempRedisRepository;
     private final PointHistoryCreateDtoRepository pointHistoryCreateDtoRepository;
-    private final OrderEmailHelper orderEmailHelper;
+
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
         log.debug("Order Service : createOrderPageRequestDto");
@@ -133,11 +133,7 @@ public class OrderService {
             guestRepository.save(guest);
         }
 
-        try {
-            orderEmailHelper.sendOrderEmail(order, orderSubmitDto.getEmail(), orderSubmitDto.getRecipientAddress(), orderSubmitDto.getRecipientName());
-        } catch (RuntimeException e) {
-            log.info("이메일 전송실패");
-        }
+
 
         PointHistoryCreateDTO pointHistoryCreateDTO = new PointHistoryCreateDTO(userId,
                                                                                 orderSubmitDto.getUsedPoints() == null ? 0 : orderSubmitDto.getUsedPoints(),
