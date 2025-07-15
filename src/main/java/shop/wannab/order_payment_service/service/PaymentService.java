@@ -93,11 +93,13 @@ public class PaymentService {
             List<CartItem> orderItems = itemTempRedisRepository.getOrderItems(order.getUserId());
             OrderItemListDto itemListDto = new OrderItemListDto(orderItems);
 
-            PointHistoryCreateDTO pointHistoryCreateDTO = pointHistoryCreateDtoRepository.consumeByOrderId(orderId);
+            PointHistoryCreateDTO pointHistoryCreateDTO = null;
 
             List<CouponUsageRequestDto.UsedCouponInfo> usedCouponInfos = null;
             if (Objects.nonNull(order.getUserId())) {
                 usedCouponInfos = couponUsageTempRedisRepository.consumeUsedCouponInfos(order.getUserId());
+                pointHistoryCreateDTO = pointHistoryCreateDtoRepository.consumeByOrderId(orderId);
+
             }
 
             CouponUsageRequestDto couponUsageRequestDto = new CouponUsageRequestDto();

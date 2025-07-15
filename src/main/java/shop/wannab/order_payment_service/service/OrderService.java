@@ -133,13 +133,13 @@ public class OrderService {
             guestRepository.save(guest);
         }
 
-
-
-        PointHistoryCreateDTO pointHistoryCreateDTO = new PointHistoryCreateDTO(userId,
+        if (userId > 0) {
+            PointHistoryCreateDTO pointHistoryCreateDTO = new PointHistoryCreateDTO(userId,
                                                                                 orderSubmitDto.getUsedPoints() == null ? 0 : orderSubmitDto.getUsedPoints(),
                                                                                 order.getTotalPrice(),
                                                                                 order.getId());
-        pointHistoryCreateDtoRepository.save(pointHistoryCreateDTO);
+            pointHistoryCreateDtoRepository.save(pointHistoryCreateDTO);
+        }
 
         int payAmount = order.getTotalPrice();
 
