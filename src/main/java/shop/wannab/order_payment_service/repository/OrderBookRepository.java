@@ -13,7 +13,7 @@ public interface OrderBookRepository extends JpaRepository<OrderBook, Long> {
     List<BookIdQuantityProjection> queryByOrder(Order order);
 
     //배송완료체크
-    boolean existsByOrder_UserIdAndBookIdAndOrder_OrderStatus(Long userId, Long bookId, OrderStatus orderStatus);
+    boolean existsByIdAndOrder_OrderStatus(Long obId, OrderStatus orderStatus);
 
     //회원주문목록 썸네일 가져오기위해
     OrderBook findTop1ByOrder_IdOrderByObIdAsc(Long orderId);
