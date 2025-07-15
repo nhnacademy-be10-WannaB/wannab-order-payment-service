@@ -53,7 +53,7 @@ public class PaymentService {
 //      TODO: 주문 정보 조회 및 상태 변경
 //      왜 이렇게 파싱하냐면 토스페이먼츠 API에 orderId를 보낼때 최소 6자이상 String 타입을 보내야해서 붙였습니다
 //      그래서 아래에 파싱한 orderId로 OrderRepository에서 값 변경하시거나 활용할때 사용하시면 될거같습니다.
-        Long orderId = Long.parseLong(requestDto.getOrderId().replace("testWannaBShopje", ""));
+        Long orderId = Long.parseLong(requestDto.getOrderId().replace("testWannaBShop", ""));
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
 
         try{
