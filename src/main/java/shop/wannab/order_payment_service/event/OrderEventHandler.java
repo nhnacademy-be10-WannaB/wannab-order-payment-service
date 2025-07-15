@@ -8,8 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import static shop.wannab.order_payment_service.config.RabbitConfig.EXCHANGE;
-import static shop.wannab.order_payment_service.config.RabbitConfig.ROUTING_KEY;
+import static shop.wannab.order_payment_service.config.RabbitConfig.*;
 
 @Component
 @RequiredArgsConstructor
@@ -20,8 +19,15 @@ public class OrderEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleOrderCreated(OrderCreatedEvent event) throws JsonProcessingException {
-        String json = objectMapper.writeValueAsString(event);
-        rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, json);
+        String bookIdDecrementQuantities = objectMapper.writeValueAsString(event.getItemListDto());
+        rabbitTemplate.convertAndSend(EXCHANGE, BOOK_ROUTING_KEY, bookIdDecrementQuantities);
+
+        if (event.getUserId() > 0) {
+            String pointHistoryCreationDtoPayload = objectMapper.writeValueAsString(event.getPointHistoryCreateDTO());
+            rabbitTemplate.convertAndSend(EXCHANGE, USER_ROUTING_KEY, pointHistoryCreationDtoPayload);
+        }
+
+        rabbitTemplate.convertAndSend(EXCHANGE, COUPON_ROUTING_KEY, event.getCouponUsageRequestDto());
 
     }
 }

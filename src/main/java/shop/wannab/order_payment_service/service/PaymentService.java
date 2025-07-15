@@ -4,22 +4,29 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.TossPaymentsApiClient;
 import shop.wannab.order_payment_service.entity.Order;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.PaymentProvider;
+import shop.wannab.order_payment_service.entity.dto.CartItem;
+import shop.wannab.order_payment_service.entity.dto.CouponUsageRequestDto;
+import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
+import shop.wannab.order_payment_service.entity.dto.PointHistoryCreateDTO;
 import shop.wannab.order_payment_service.entity.payment.Cancel;
 import shop.wannab.order_payment_service.entity.payment.Payment;
 import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmResponseDto;
-import shop.wannab.order_payment_service.repository.CancelRepository;
-import shop.wannab.order_payment_service.repository.OrderRepository;
-import shop.wannab.order_payment_service.repository.PaymentRepository;
+import shop.wannab.order_payment_service.event.OrderCreatedEvent;
+import shop.wannab.order_payment_service.repository.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +36,10 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final CancelRepository cancelRepository;
-
+    private final OrderItemTempRedisRepository itemTempRedisRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PointHistoryCreateDtoRepository pointHistoryCreateDtoRepository;
+    private final CouponUsageTempRedisRepository couponUsageTempRedisRepository;
     @Value("${toss.payments.secretKey}")
     private String secretKey;
 
@@ -41,7 +51,7 @@ public class PaymentService {
 //      TODO: 주문 정보 조회 및 상태 변경
 //      왜 이렇게 파싱하냐면 토스페이먼츠 API에 orderId를 보낼때 최소 6자이상 String 타입을 보내야해서 붙였습니다
 //      그래서 아래에 파싱한 orderId로 OrderRepository에서 값 변경하시거나 활용할때 사용하시면 될거같습니다.
-        Long orderId = Long.parseLong(requestDto.getOrderId().replace("testWannaBShop", ""));
+        Long orderId = Long.parseLong(requestDto.getOrderId().replace("testWannaBShopje", ""));
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
 
         try{
@@ -77,6 +87,25 @@ public class PaymentService {
 
             //결제완료시 orderStatus 결제완료로 변환
             order.setOrderStatus(OrderStatus.PAID);
+
+            List<CartItem> orderItems = itemTempRedisRepository.getOrderItems(order.getUserId());
+            OrderItemListDto itemListDto = new OrderItemListDto(orderItems);
+
+            PointHistoryCreateDTO pointHistoryCreateDTO = pointHistoryCreateDtoRepository.consumeByOrderId(orderId);
+
+            List<CouponUsageRequestDto.UsedCouponInfo> usedCouponInfos = null;
+            if (Objects.nonNull(order.getUserId())) {
+                usedCouponInfos = couponUsageTempRedisRepository.consumeUsedCouponInfos(order.getUserId());
+            }
+
+            CouponUsageRequestDto couponUsageRequestDto = new CouponUsageRequestDto();
+            couponUsageRequestDto.setOrderId(orderId);
+            couponUsageRequestDto.setUsedCoupons(usedCouponInfos);
+            couponUsageRequestDto.setUserId(order.getUserId());
+
+            eventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), order.getUserId(), itemListDto, pointHistoryCreateDTO, couponUsageRequestDto));
+
+            itemTempRedisRepository.deleteOrderItems(order.getUserId());
 
             // 6. 프론트 서비스에 전달할 최종 결과 DTO 생성 및 반환
             return new FinalOrderResultDto(
