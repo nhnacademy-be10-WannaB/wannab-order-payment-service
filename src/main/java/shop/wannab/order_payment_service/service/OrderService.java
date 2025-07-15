@@ -570,9 +570,9 @@ public class OrderService {
     /**
      * 배송완료체크 (리뷰작성목적)
     */
-    public boolean isReviewable(Long userId, Long bookId) {
-        return orderBookRepository.existsByOrder_UserIdAndBookIdAndOrder_OrderStatus(
-                userId, bookId, OrderStatus.COMPLETED
+    public boolean isReviewable(Long orderBookId) {
+        return orderBookRepository.existsByIdAndOrder_OrderStatus(
+                orderBookId, OrderStatus.COMPLETED
         );
     }
 
