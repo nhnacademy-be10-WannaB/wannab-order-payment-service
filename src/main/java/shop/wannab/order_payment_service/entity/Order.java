@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +19,7 @@ import lombok.Setter;
 
 @Entity
 @Getter
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "orders")
 public class Order {
@@ -46,15 +48,18 @@ public class Order {
     @Column(name = "order_status")
     private OrderStatus orderStatus;
 
+    @NotNull
     @Column(name = "total_book_price")
     private int totalBookPrice;
 
+    @NotNull
     @Column(name = "total_discount_amount")
     private int totalDiscountAmount;
 
     @Column(name = "shipping_fee")
     private int shippingFee;
 
+    @NotNull
     @Column(name = "total_paving_price")
     private int totalPavingPrice;
 

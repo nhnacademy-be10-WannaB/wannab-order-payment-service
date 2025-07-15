@@ -1,6 +1,7 @@
 package shop.wannab.order_payment_service.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "cart_item")
 @Getter
+@AllArgsConstructor
 @NoArgsConstructor
 public class CartItemEntity {
 

@@ -18,7 +18,6 @@ import shop.wannab.order_payment_service.client.UserClient;
 import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
-import shop.wannab.order_payment_service.event.OrderCreatedEvent;
 import shop.wannab.order_payment_service.repository.*;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
@@ -38,9 +37,9 @@ public class OrderService {
     private final OrderBookRepository orderBookRepository;
     private final PavingRepository pavingRepository;
     private final OrderItemTempRedisRepository orderItemTempRedisRepository;
+    private final CouponUsageTempRedisRepository couponUsageTempRedisRepository;
+    private final PointHistoryCreateDtoRepository pointHistoryCreateDtoRepository;
 
-    private final ApplicationEventPublisher eventPublisher;
-    private final OrderEmailHelper orderEmailHelper;
 
     public OrderPageRequestDto createOrderPageRequestDto(Long userId, OrderItemListDto orderItemListDto) {
         log.debug("Order Service : createOrderPageRequestDto");
@@ -97,7 +96,7 @@ public class OrderService {
         int totalBookPrice = getTotalBookPrice(bookSimpleInfos, orderSubmitDto.getBookOrderSubmitDtos());
         int totalDiscountAmount = 0;
         if (userId > 0) {
-            getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
+            totalDiscountAmount = getTotalDiscountAmount(userId, orderSubmitDto, bookSimpleInfos, totalBookPrice);
         }
         int shippingFee = getShippingFee(totalBookPrice);
         int totalPavingPrice = getTotalPavingPrice(orderSubmitDto);
@@ -129,26 +128,21 @@ public class OrderService {
         }
         orderBookRepository.saveAll(orderBooks);
 
-        if (userId > 0) { //회원일시
-            try {//TODO: rabbitmq 적용
-                userClient.processPoints(new PointProcessRequest(userId, order.getId(), orderSubmitDto.getUsedPoints(), order.getTotalPrice()));
-
-            } catch (RuntimeException e) {
-            //log.warn("포인트 적립 실패: userId={}, orderId={}", userId, orderId);
-            }
-        } else { //비회원일시
+        if (userId < 0) {
             Guest guest = new Guest(orderSubmitDto.getGuestPassword(), order);
             guestRepository.save(guest);
         }
 
-        try {
-            orderEmailHelper.sendOrderEmail(order, orderSubmitDto.getEmail(), orderSubmitDto.getRecipientAddress(), orderSubmitDto.getRecipientName());
-        } catch (RuntimeException e) {
-            log.info("이메일 전송실패");
+        if (userId > 0) {
+            PointHistoryCreateDTO pointHistoryCreateDTO = new PointHistoryCreateDTO(userId,
+                                                                                orderSubmitDto.getUsedPoints() == null ? 0 : orderSubmitDto.getUsedPoints(),
+                                                                                order.getTotalPrice(),
+                                                                                order.getId());
+            pointHistoryCreateDtoRepository.save(pointHistoryCreateDTO);
         }
+
         int payAmount = order.getTotalPrice();
 
-        eventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), itemListDto));
         OrderInfoForPayment orderInfoForPayment = new OrderInfoForPayment(order.getId(), orderName, payAmount);
         return orderInfoForPayment;
     }
@@ -242,12 +236,18 @@ public class OrderService {
 
         List<TryApplyCouponsResponseDto> couponDiscountInfos = couponClient.getApplyCoupons(userId, new TryApplyCouponsRequestDto(couponIdBookIdMap)).getBody();//여기서 책아이디:가격 맵 생성
         Map<Long, Integer> bookIdPriceMap = new HashMap<>();
+
         for (BookIdTitlePriceDto idTitlePriceDto : bookIdTitlePriceListDto.getIdTitlePriceDtos()) {
             bookIdPriceMap.put(idTitlePriceDto.getBookId(), idTitlePriceDto.getSalesPrice());
         }
         //책에 적용할 쿠폰 할인가 합산
+        List<CouponUsageRequestDto.UsedCouponInfo> usedCouponInfos = new ArrayList<>();
         for (TryApplyCouponsResponseDto discountInfo : couponDiscountInfos) {
             Long bookId = discountInfo.getBookId();
+            CouponUsageRequestDto.UsedCouponInfo usedCouponInfo = new CouponUsageRequestDto.UsedCouponInfo();
+            usedCouponInfo.setBookId(bookId);
+            usedCouponInfo.setCouponId(discountInfo.getCouponId());
+            usedCouponInfos.add(usedCouponInfo);
             if (Objects.nonNull(bookId)) {//책 각각에 적용
                 Integer bookPrice = bookIdPriceMap.get(bookId);
                 if (discountInfo.getDiscountType().equals(DiscountType.FIXED)) {
@@ -267,6 +267,8 @@ public class OrderService {
                 }
             }
         }
+        couponUsageTempRedisRepository.saveUsedCouponInfos(userId, usedCouponInfos);
+
         if (Objects.nonNull(dto.getUserId()) && !dto.getUserId().isBlank()) {
             totalDiscountAmount += dto.getUsedPoints();
         }
@@ -280,14 +282,32 @@ public class OrderService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderAt").descending());
 
         return orderRepository.findAllByUserIdAndOrderStatusNot(userId, OrderStatus.FAILED, pageable)
-                .map(order -> new OrderLookupResponse(
-                        order.getId(),
-                        order.getOrderName(),
-                        order.getOrderAt(),
-                        order.getOrderStatus(),
-                        order.getShippedAt(),
-                        order.getTotalPrice()
-                ));
+                .map(order -> {
+                    OrderBook orderBook = orderBookRepository.findTop1ByOrder_IdOrderByObIdAsc(order.getId());
+                    String thumbnailUrl = null;
+
+                    if (orderBook != null) {
+                        // 도서 썸네일 외부에서 받아오기
+                        OrderItemListDto oneBook = new OrderItemListDto(
+                                List.of(new CartItem(orderBook.getBookId(), orderBook.getQuantity()))
+                        );
+                        OrderBookInfoListDto bookInfo = bookClient.getOrderBookInfos(oneBook);
+
+                        if (!bookInfo.getOrderBookInfos().isEmpty()) {
+                            thumbnailUrl = bookInfo.getOrderBookInfos().get(0).getThumbnailUrl();
+                        }
+                    }
+
+                    return new OrderLookupResponse(
+                            order.getId(),
+                            order.getOrderName(),
+                            order.getOrderAt(),
+                            order.getOrderStatus(),
+                            order.getShippedAt(),
+                            order.getTotalPrice(),
+                            thumbnailUrl // 썸네일 포함해서 DTO 리턴
+                    );
+                });
     }
 
     // 쇼핑몰 주문 전체 조회 (관리자용)
@@ -552,9 +572,9 @@ public class OrderService {
     /**
      * 배송완료체크 (리뷰작성목적)
     */
-    public boolean isReviewable(Long userId, Long bookId) {
-        return orderBookRepository.existsByOrder_UserIdAndBookIdAndOrder_OrderStatus(
-                userId, bookId, OrderStatus.COMPLETED
+    public boolean isReviewable(Long orderBookId) {
+        return orderBookRepository.existsByObIdAndOrder_OrderStatus(
+                orderBookId, OrderStatus.COMPLETED
         );
     }
 
@@ -563,7 +583,7 @@ public class OrderService {
     }
 
     public OrderItemListDto consumeTemporaryOrderInfo(long customerId) {
-        List<CartItem> orderItems = orderItemTempRedisRepository.consumeOrderItems(customerId);
+        List<CartItem> orderItems = orderItemTempRedisRepository.getOrderItems(customerId);
         return new OrderItemListDto(orderItems);
     }
 

@@ -5,15 +5,23 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.TossPaymentsApiClient;
 import shop.wannab.order_payment_service.entity.Order;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.PaymentProvider;
+import shop.wannab.order_payment_service.entity.dto.CartItem;
+import shop.wannab.order_payment_service.entity.dto.CouponUsageRequestDto;
+import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
+import shop.wannab.order_payment_service.entity.dto.PointHistoryCreateDTO;
 import shop.wannab.order_payment_service.entity.payment.Cancel;
 import shop.wannab.order_payment_service.entity.payment.Failure;
 import shop.wannab.order_payment_service.entity.payment.Payment;
@@ -25,6 +33,8 @@ import shop.wannab.order_payment_service.repository.CancelRepository;
 import shop.wannab.order_payment_service.repository.FailureRepository;
 import shop.wannab.order_payment_service.repository.OrderRepository;
 import shop.wannab.order_payment_service.repository.PaymentRepository;
+import shop.wannab.order_payment_service.event.OrderCreatedEvent;
+import shop.wannab.order_payment_service.repository.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +45,11 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final CancelRepository cancelRepository;
     private final FailureRepository failureRepository;
+    private final OrderItemTempRedisRepository itemTempRedisRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PointHistoryCreateDtoRepository pointHistoryCreateDtoRepository;
+    private final CouponUsageTempRedisRepository couponUsageTempRedisRepository;
+
 
     @Value("${toss.payments.secretKey}")
     private String secretKey;
@@ -90,6 +105,28 @@ public class PaymentService {
             order.setOrderStatus(OrderStatus.PAID);
             paymentRepository.save(payment);
 
+            List<CartItem> orderItems = itemTempRedisRepository.getOrderItems(order.getUserId());
+            OrderItemListDto itemListDto = new OrderItemListDto(orderItems);
+
+            PointHistoryCreateDTO pointHistoryCreateDTO = null;
+
+            List<CouponUsageRequestDto.UsedCouponInfo> usedCouponInfos = null;
+            if (Objects.nonNull(order.getUserId())) {
+                usedCouponInfos = couponUsageTempRedisRepository.consumeUsedCouponInfos(order.getUserId());
+                pointHistoryCreateDTO = pointHistoryCreateDtoRepository.consumeByOrderId(orderId);
+
+            }
+
+            CouponUsageRequestDto couponUsageRequestDto = new CouponUsageRequestDto();
+            couponUsageRequestDto.setOrderId(orderId);
+            couponUsageRequestDto.setUsedCoupons(usedCouponInfos);
+            couponUsageRequestDto.setUserId(order.getUserId());
+
+            eventPublisher.publishEvent(new OrderCreatedEvent(order, order.getUserId(), itemListDto, pointHistoryCreateDTO, couponUsageRequestDto));
+
+            itemTempRedisRepository.deleteOrderItems(order.getUserId());
+
+            // 6. 프론트 서비스에 전달할 최종 결과 DTO 생성 및 반환
             return new FinalOrderResultDto(
                     tossResponse.getPaymentKey(),
                     tossResponse.getOrderId(),
