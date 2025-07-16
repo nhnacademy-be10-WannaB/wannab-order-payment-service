@@ -7,6 +7,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ import shop.wannab.order_payment_service.repository.OrderRepository;
 import shop.wannab.order_payment_service.repository.PaymentRepository;
 import shop.wannab.order_payment_service.repository.PointHistoryCreateDtoRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -60,8 +62,11 @@ public class PaymentService {
 //      왜 이렇게 파싱하냐면 토스페이먼츠 API에 orderId를 보낼때 최소 6자이상 String 타입을 보내야해서 붙였습니다
 //      그래서 아래에 파싱한 orderId로 OrderRepository에서 값 변경하시거나 활용할때 사용하시면 될거같습니다.
         Long orderId = Long.parseLong(requestDto.getOrderId().replace(tossPaymentsProperties.getPrefix(), ""));
+        log.debug("Prefix 파싱 완료 orderId : {}",orderId);
+
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+        log.debug("orderId로 order 찾기 완료 orderId : {}",orderId);
 
         Payment payment = new Payment();
         payment.setPaymentKey(requestDto.getPaymentKey());
@@ -70,14 +75,17 @@ public class PaymentService {
         payment.setTotalAmount(requestDto.getAmount());
         payment.setRequestAt(LocalDateTime.now());
         payment.setStatus(OrderStatus.PENDING.name());
+        log.debug("Payment 객체 생성 완료 PaymentKey : {}",payment.getPaymentKey());
 
         try {
             TossConfirmResponseDto tossResponse = tossPaymentsApiClient.confirmPayment(authHeader, requestDto);
+            log.debug("토스페이먼츠 통신 및 승인 완료 PaymentKey : {}",payment.getPaymentKey());
 
             payment.setType(tossResponse.getType());
             payment.setMethod(tossResponse.getMethod());
             payment.setBalanceAmount(tossResponse.getBalanceAmount());
             payment.setStatus(tossResponse.getStatus());
+            log.debug("Payment setStatus 완료 PaymentKey: {}",payment.getPaymentKey());
 
             if (tossResponse.getTotalAmount() != requestDto.getAmount()) {
                 throw new IllegalStateException("결제 금액이 일치하지 않습니다.");
@@ -91,16 +99,20 @@ public class PaymentService {
             if ("FAILED".equals(tossResponse.getStatus())) {
                 order.setOrderStatus(OrderStatus.FAILED);
                 paymentRepository.save(payment);
+                log.debug("결제 실패 FAILED PaymentKey : {}",payment.getPaymentKey());
 
                 String errorCode = tossResponse.getFailure().getCode();
                 String errorMessage = tossResponse.getFailure().getMessage();
                 savePaymentFailure(payment, errorCode, errorMessage);
+                log.debug("결제 실패 Failure 객체 생성 PaymentKey : {}",payment.getPaymentKey());
+
                 throw new PaymentProcessingException(errorCode, errorMessage, requestDto.getOrderId(), requestDto.getPaymentKey(), HttpStatus.BAD_REQUEST);
 
             }
 
             order.setOrderStatus(OrderStatus.PAID);
             paymentRepository.save(payment);
+            log.debug("결제 성공 Payment 객체 생성 PaymentKey : {}",payment.getPaymentKey());
 
             List<CartItem> orderItems = itemTempRedisRepository.getOrderItems(order.getUserId());
             OrderItemListDto itemListDto = new OrderItemListDto(orderItems);
@@ -111,19 +123,20 @@ public class PaymentService {
             if (Objects.nonNull(order.getUserId())) {
                 usedCouponInfos = couponUsageTempRedisRepository.consumeUsedCouponInfos(order.getUserId());
                 pointHistoryCreateDTO = pointHistoryCreateDtoRepository.consumeByOrderId(orderId);
-
+                log.debug("포인트 생성 orderId : {}",orderId);
             }
 
             CouponUsageRequestDto couponUsageRequestDto = new CouponUsageRequestDto();
             couponUsageRequestDto.setOrderId(orderId);
             couponUsageRequestDto.setUsedCoupons(usedCouponInfos);
             couponUsageRequestDto.setUserId(order.getUserId());
+            log.debug("쿠폰 사용 처리 orderId : {}",orderId);
 
             eventPublisher.publishEvent(new OrderCreatedEvent(order, order.getUserId(), itemListDto, pointHistoryCreateDTO, couponUsageRequestDto));
+            log.debug("eventPublisher 성공");
 
             itemTempRedisRepository.deleteOrderItems(order.getUserId());
-
-            // 6. 프론트 서비스에 전달할 최종 결과 DTO 생성 및 반환
+            log.debug("재고 감소 orderId : {}",orderId);
             return new FinalOrderResultDto(
                     tossResponse.getPaymentKey(),
                     tossResponse.getOrderId(),
@@ -136,6 +149,7 @@ public class PaymentService {
             String errorCode = "API_CALL_ERROR";
             String errorMessage = "토스페이먼츠 API 호출 중 예외 발생: " + e.getMessage();
             savePaymentFailure(payment, errorCode, errorMessage);
+            log.debug("토스페이먼츠 API 호출 중 예외 발생 : {}",payment.getPaymentKey());
             throw new PaymentProcessingException(errorCode, errorMessage, requestDto.getOrderId(), requestDto.getPaymentKey(), HttpStatus.INTERNAL_SERVER_ERROR, e);
         }
 
