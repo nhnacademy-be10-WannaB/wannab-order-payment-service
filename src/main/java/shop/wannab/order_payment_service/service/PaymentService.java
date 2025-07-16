@@ -1,17 +1,14 @@
 package shop.wannab.order_payment_service.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.TossPaymentsApiClient;
@@ -28,13 +25,16 @@ import shop.wannab.order_payment_service.entity.payment.Payment;
 import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmResponseDto;
+import shop.wannab.order_payment_service.event.OrderCreatedEvent;
 import shop.wannab.order_payment_service.exception.PaymentProcessingException;
+import shop.wannab.order_payment_service.properties.TossPaymentsProperties;
 import shop.wannab.order_payment_service.repository.CancelRepository;
+import shop.wannab.order_payment_service.repository.CouponUsageTempRedisRepository;
 import shop.wannab.order_payment_service.repository.FailureRepository;
+import shop.wannab.order_payment_service.repository.OrderItemTempRedisRepository;
 import shop.wannab.order_payment_service.repository.OrderRepository;
 import shop.wannab.order_payment_service.repository.PaymentRepository;
-import shop.wannab.order_payment_service.event.OrderCreatedEvent;
-import shop.wannab.order_payment_service.repository.*;
+import shop.wannab.order_payment_service.repository.PointHistoryCreateDtoRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -49,20 +49,17 @@ public class PaymentService {
     private final ApplicationEventPublisher eventPublisher;
     private final PointHistoryCreateDtoRepository pointHistoryCreateDtoRepository;
     private final CouponUsageTempRedisRepository couponUsageTempRedisRepository;
-
-
-    @Value("${toss.payments.secretKey}")
-    private String secretKey;
+    private final TossPaymentsProperties tossPaymentsProperties;
 
     @Transactional
     public FinalOrderResultDto confirmAndProcessPayment(TossConfirmRequestDto requestDto) {
-        String encodedAuth = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
+        String encodedAuth = Base64.getEncoder().encodeToString((tossPaymentsProperties.getSecretKey() + ":").getBytes(StandardCharsets.UTF_8));
         String authHeader = "Basic " + encodedAuth;
 
 //      TODO: 주문 정보 조회 및 상태 변경
 //      왜 이렇게 파싱하냐면 토스페이먼츠 API에 orderId를 보낼때 최소 6자이상 String 타입을 보내야해서 붙였습니다
 //      그래서 아래에 파싱한 orderId로 OrderRepository에서 값 변경하시거나 활용할때 사용하시면 될거같습니다.
-        Long orderId = Long.parseLong(requestDto.getOrderId().replace("testWannaBShop", ""));
+        Long orderId = Long.parseLong(requestDto.getOrderId().replace(tossPaymentsProperties.getPrefix(), ""));
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
 
