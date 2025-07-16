@@ -55,6 +55,8 @@ public class PaymentService {
 
     @Transactional
     public FinalOrderResultDto confirmAndProcessPayment(TossConfirmRequestDto requestDto) {
+        log.debug("confirmAndProcessPayment Hi");
+        log.debug("anybody there : {}, {}", tossPaymentsProperties.getSecretKey(), tossPaymentsProperties.getPrefix());
         String encodedAuth = Base64.getEncoder().encodeToString((tossPaymentsProperties.getSecretKey() + ":").getBytes(StandardCharsets.UTF_8));
         String authHeader = "Basic " + encodedAuth;
 
@@ -137,6 +139,7 @@ public class PaymentService {
 
             itemTempRedisRepository.deleteOrderItems(order.getUserId());
             log.debug("재고 감소 orderId : {}",orderId);
+            log.debug("confirmAndProcessPayment Bye");
             return new FinalOrderResultDto(
                     tossResponse.getPaymentKey(),
                     tossResponse.getOrderId(),
