@@ -136,7 +136,7 @@ public class OrderService {
         if (userId > 0) {
             PointHistoryCreateDTO pointHistoryCreateDTO = new PointHistoryCreateDTO(userId,
                                                                                 orderSubmitDto.getUsedPoints() == null ? 0 : orderSubmitDto.getUsedPoints(),
-                                                                                order.getTotalPrice(),
+                                                                                order.getTotalBookPrice(),
                                                                                 order.getId());
             pointHistoryCreateDtoRepository.save(pointHistoryCreateDTO);
         }
