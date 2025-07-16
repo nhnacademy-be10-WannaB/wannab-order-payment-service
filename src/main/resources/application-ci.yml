@@ -61,6 +61,7 @@ eureka:
 toss:
   payments:
     secretKey: secret
+    prefix: secret
 
 # Book
 book:
