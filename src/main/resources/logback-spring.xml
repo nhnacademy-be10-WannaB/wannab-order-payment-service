@@ -17,6 +17,11 @@
         </rollingPolicy>
     </appender>
 
+    <logger name="shop.wannab.order_payment_service" level="DEBUG">
+        <appender-ref ref="ROLLING_FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
     <springProfile name="v1,v2">
         <root level="INFO">
             <appender-ref ref="ROLLING_FILE"/>
