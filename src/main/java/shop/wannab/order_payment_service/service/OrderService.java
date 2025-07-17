@@ -269,7 +269,7 @@ public class OrderService {
         }
         couponUsageTempRedisRepository.saveUsedCouponInfos(userId, usedCouponInfos);
 
-        if (userId != null && userId >= 0) {
+        if (Objects.nonNull(userId) && userId > 0 && Objects.nonNull(dto.getUsedPoints())) {
             totalDiscountAmount += dto.getUsedPoints();
         }
 
