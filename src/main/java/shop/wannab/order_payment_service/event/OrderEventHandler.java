@@ -30,9 +30,8 @@ public class OrderEventHandler {
         if (event.getUserId() > 0) {
             String pointHistoryCreationDtoPayload = objectMapper.writeValueAsString(event.getPointHistoryCreateDTO());
             rabbitTemplate.convertAndSend(EXCHANGE, USER_ROUTING_KEY, pointHistoryCreationDtoPayload);
+            rabbitTemplate.convertAndSend(EXCHANGE, COUPON_ROUTING_KEY, event.getCouponUsageRequestDto());
         }
-
-        rabbitTemplate.convertAndSend(EXCHANGE, COUPON_ROUTING_KEY, event.getCouponUsageRequestDto());
 
         try {
             Order order = event.getOrder();

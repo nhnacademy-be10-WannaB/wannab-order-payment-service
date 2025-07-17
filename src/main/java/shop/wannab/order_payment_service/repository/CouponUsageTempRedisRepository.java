@@ -16,7 +16,11 @@ public class CouponUsageTempRedisRepository {
     public void saveUsedCouponInfos(long userId, List<CouponUsageRequestDto.UsedCouponInfo> usedCouponInfos) {
         String key = PREFIX + userId;
         for (CouponUsageRequestDto.UsedCouponInfo usedCouponInfo : usedCouponInfos) {
-            redisTemplate.opsForHash().put(key, usedCouponInfo.getBookId(), usedCouponInfo.getCouponId());
+            Long bookIdOrNull = usedCouponInfo.getBookId();
+            if (Objects.isNull(bookIdOrNull)) {
+                bookIdOrNull = 0L;
+            }
+            redisTemplate.opsForHash().put(key, bookIdOrNull, usedCouponInfo.getCouponId());
         }
     }
 
@@ -33,7 +37,7 @@ public class CouponUsageTempRedisRepository {
             couponInfo.setCouponId(couponId);
             usedCouponInfos.add(couponInfo);
         }
-        redisTemplate.delete(userId.toString());
+        redisTemplate.delete(PREFIX + userId);
         return usedCouponInfos;
     }
 }

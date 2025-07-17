@@ -6,6 +6,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,9 +14,12 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
     public static final String EXCHANGE = "wannab.order.exchange";
 
-    public static final String ORDER_CREATED_BOOK_QUEUE = "wannab.order.created.book.queue";
-    public static final String ORDER_CREATED_USER_QUEUE = "wannab.order.created.user.queue";
-    public static final String ORDER_CREATED_COUPON_QUEUE = "wannab.order.created.coupon.queue";
+    @Value("${queue.order-created.book}")
+    private String ORDER_CREATED_BOOK_QUEUE;
+    @Value("${queue.order-created.user}")
+    private String ORDER_CREATED_USER_QUEUE;
+    @Value("${queue.order-created.coupon}")
+    private String ORDER_CREATED_COUPON_QUEUE;
 
     public static final String BOOK_ROUTING_KEY = "order.created.book";
     public static final String USER_ROUTING_KEY = "order.created.user";
