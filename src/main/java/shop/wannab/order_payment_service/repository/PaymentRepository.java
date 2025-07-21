@@ -7,4 +7,5 @@ import shop.wannab.order_payment_service.entity.payment.Payment;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrder_Id(Long orderId);
+
 }
