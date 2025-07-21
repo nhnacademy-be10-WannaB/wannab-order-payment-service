@@ -1,4 +1,4 @@
-//package shop.wannab.order_payment_service;
+package shop.wannab.order_payment_service;//package shop.wannab.order_payment_service;
 //
 //import org.junit.jupiter.api.Test;
 //import org.springframework.boot.test.context.SpringBootTest;
