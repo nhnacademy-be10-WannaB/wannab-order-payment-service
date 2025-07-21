@@ -21,7 +21,7 @@ class RabbitConfigTest {
     void exchange_shouldBeCreated() {
         TopicExchange exchange = rabbitConfig.exchange();
         assertThat(exchange).isNotNull();
-        assertThat(exchange.getName()).isEqualTo(RabbitConfig.EXCHANGE);
+        assertThat(exchange.getName()).isEqualTo("wannab.order.exchange");
     }
 
     @Test
@@ -30,9 +30,9 @@ class RabbitConfigTest {
         Queue userQueue = rabbitConfig.orderCreatedUserQueue();
         Queue couponQueue = rabbitConfig.orderCreatedCouponQueue();
 
-        assertThat(bookQueue.getName()).isEqualTo(RabbitConfig.ORDER_CREATED_BOOK_QUEUE);
-        assertThat(userQueue.getName()).isEqualTo(RabbitConfig.ORDER_CREATED_USER_QUEUE);
-        assertThat(couponQueue.getName()).isEqualTo(RabbitConfig.ORDER_CREATED_COUPON_QUEUE);
+        assertThat(bookQueue.getName()).isEqualTo("test.book.queueueue");
+        assertThat(userQueue.getName()).isEqualTo("test.user.queueueue");
+        assertThat(couponQueue.getName()).isEqualTo("test.coupon.queueueue");
     }
 
     @Test
@@ -41,9 +41,9 @@ class RabbitConfigTest {
         Binding userBinding = rabbitConfig.bindingUser();
         Binding couponBinding = rabbitConfig.bindingCoupon();
 
-        assertThat(bookBinding.getRoutingKey()).isEqualTo(RabbitConfig.BOOK_ROUTING_KEY);
-        assertThat(userBinding.getRoutingKey()).isEqualTo(RabbitConfig.USER_ROUTING_KEY);
-        assertThat(couponBinding.getRoutingKey()).isEqualTo(RabbitConfig.COUPON_ROUTING_KEY);
+        assertThat(bookBinding.getRoutingKey()).isEqualTo("order.created.book");
+        assertThat(userBinding.getRoutingKey()).isEqualTo("order.created.user");
+        assertThat(couponBinding.getRoutingKey()).isEqualTo("order.created.coupon");
     }
 
     @Test
