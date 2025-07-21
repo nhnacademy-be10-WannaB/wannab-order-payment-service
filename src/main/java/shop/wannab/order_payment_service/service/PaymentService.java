@@ -54,7 +54,7 @@ public class PaymentService {
     private final TossPaymentsProperties tossPaymentsProperties;
 
     @Transactional
-    public FinalOrderResultDto confirmAndProcessPayment(TossConfirmRequestDto requestDto) {
+    public FinalOrderResultDto confirmAndProcessTossPayment(TossConfirmRequestDto requestDto) {
         log.debug("confirmAndProcessPayment Hi");
         log.debug("anybody there : {}, {}", tossPaymentsProperties.getSecretKey(), tossPaymentsProperties.getPrefix());
         String encodedAuth = Base64.getEncoder().encodeToString((tossPaymentsProperties.getSecretKey() + ":").getBytes(StandardCharsets.UTF_8));
