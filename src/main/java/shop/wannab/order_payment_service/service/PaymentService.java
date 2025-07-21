@@ -145,6 +145,8 @@ public class PaymentService {
                     tossResponse.getOrderId(),
                     tossResponse.getTotalAmount()
             );
+        } catch (PaymentProcessingException e) {
+            throw e;
         } catch (Exception e) {
             order.setOrderStatus(OrderStatus.FAILED);
             payment.setStatus("API_CALL_FAILED");
@@ -160,7 +162,6 @@ public class PaymentService {
 
     private void savePaymentFailure(Payment payment, String errorCode, String message) {
         Failure failure = new Failure(
-                payment.getPaymentKey(),
                 payment,
                 errorCode,
                 message

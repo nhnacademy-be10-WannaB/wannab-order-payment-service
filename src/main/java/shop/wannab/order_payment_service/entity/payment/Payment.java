@@ -9,6 +9,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,6 +21,7 @@ import shop.wannab.order_payment_service.entity.PaymentProvider;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Payment {
 
     @Id
@@ -48,6 +50,6 @@ public class Payment {
     private PaymentProvider paymentProvider;
 
     @OneToOne
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id",unique = true)
     private Order order;
 }

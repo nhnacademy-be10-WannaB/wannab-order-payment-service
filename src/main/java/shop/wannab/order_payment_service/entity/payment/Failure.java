@@ -13,7 +13,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 public class Failure {
@@ -22,7 +21,7 @@ public class Failure {
 
     @OneToOne
     @MapsId
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "payment_key")
     private Payment payment;
 
     @NotNull
@@ -30,4 +29,10 @@ public class Failure {
 
     @NotNull
     private String message;
+
+    public Failure(Payment payment, @NotNull String errorCode, @NotNull String message) {
+        this.payment = payment;
+        this.errorCode = errorCode;
+        this.message = message;
+    }
 }
