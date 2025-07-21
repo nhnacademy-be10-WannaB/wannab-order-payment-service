@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -20,11 +21,22 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 
 @WebMvcTest(PavingController.class)
 @ActiveProfiles("ci")
+@AutoConfigureRestDocs
 class PavingControllerTest {
 
     @Autowired
@@ -50,7 +62,18 @@ class PavingControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(paving.getId()))
                 .andExpect(jsonPath("$.name").value(paving.getName()))
-                .andExpect(jsonPath("$.price").value(paving.getPrice()));
+                .andExpect(jsonPath("$.price").value(paving.getPrice()))
+                .andDo(document("paving/create",
+                        requestFields(
+                                fieldWithPath("name").description("포장지 이름"),
+                                fieldWithPath("price").description("포장 가격")
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("생성된 포장 ID"),
+                                fieldWithPath("name").description("포장지 이름"),
+                                fieldWithPath("price").description("포장 가격")
+                        )
+                ));
     }
 
     @Test
@@ -68,7 +91,21 @@ class PavingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(paving.getId()))
                 .andExpect(jsonPath("$.name").value(paving.getName()))
-                .andExpect(jsonPath("$.price").value(paving.getPrice()));
+                .andExpect(jsonPath("$.price").value(paving.getPrice()))
+                .andDo(document("paving/update",
+                        pathParameters(
+                                parameterWithName("paving-id").description("수정할 포장 ID")
+                        ),
+                        requestFields(
+                                fieldWithPath("name").description("수정할 포장지 이름"),
+                                fieldWithPath("price").description("수정할 포장 가격")
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("수정된 포장 ID"),
+                                fieldWithPath("name").description("수정된 포장지 이름"),
+                                fieldWithPath("price").description("수정된 포장 가격")
+                        )
+                ));
     }
 
     @Test
@@ -78,7 +115,12 @@ class PavingControllerTest {
         doNothing().when(pavingService).deletePaving(id);
 
         mockMvc.perform(delete("/api/admin/paving/{paving-id}", id))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andDo(document("paving/delete",
+                        pathParameters(
+                                parameterWithName("paving-id").description("삭제할 포장 ID")
+                        )
+                ));
 
         verify(pavingService, times(1)).deletePaving(id);
     }
@@ -97,6 +139,13 @@ class PavingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(list.size()))
                 .andExpect(jsonPath("$[0].id").value(list.get(0).getId()))
-                .andExpect(jsonPath("$[1].name").value(list.get(1).getName()));
+                .andExpect(jsonPath("$[1].name").value(list.get(1).getName()))
+                .andDo(document("paving/get-list",
+                        responseFields(
+                                fieldWithPath("[].id").description("포장 ID"),
+                                fieldWithPath("[].name").description("포장 이름"),
+                                fieldWithPath("[].price").description("포장 가격")
+                        )
+                ));
     }
 }
