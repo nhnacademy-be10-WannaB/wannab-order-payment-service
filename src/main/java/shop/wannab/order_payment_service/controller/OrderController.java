@@ -71,7 +71,7 @@ public class OrderController {
 
 
     @PostMapping("/orders/new")
-    OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody OrderSubmitDto orderSubmitDto) {
+    OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody @Valid OrderSubmitDto orderSubmitDto) {
         if (Objects.nonNull(userId)) {
             return orderService.createOrder(orderSubmitDto, userId);
         }
@@ -109,7 +109,7 @@ public class OrderController {
 
     //주문상세조회(비회원)
     @PostMapping("/orders/guest")
-    public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestBody GuestOrderRequest request){
+    public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestBody @Valid GuestOrderRequest request){
 
         return ResponseEntity.ok(orderService.getOrderForGuest(request.getOrderId(), request.getPassword()));
     }
@@ -124,7 +124,7 @@ public class OrderController {
 
     //주문취소(결제취소) 비회원
     @PostMapping("/orders/guest/cancel")
-    public ResponseEntity<Void> cancelGuestOrder(@RequestBody GuestOrderRequest request){
+    public ResponseEntity<Void> cancelGuestOrder(@RequestBody @Valid GuestOrderRequest request){
         orderService.cancelGuestOrder(request.getOrderId(), request.getPassword());
         return ResponseEntity.ok().build();
     }
@@ -149,7 +149,7 @@ public class OrderController {
 
     //반품(비회원)
     @PostMapping("/orders/guest/refund")
-    public ResponseEntity<Void> refundGuestOrder(@RequestBody GuestOrderRequest request,
+    public ResponseEntity<Void> refundGuestOrder(@RequestBody @Valid GuestOrderRequest request,
                                                  @RequestParam RefundReason reason){
         orderService.refundGuestOrder(request.getOrderId(), request.getPassword(), reason);
         return ResponseEntity.ok().build();
