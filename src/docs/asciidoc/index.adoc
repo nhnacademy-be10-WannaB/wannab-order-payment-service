@@ -1,0 +1,50 @@
+= Wannab Order-Payment API 문서
+:toc: left
+:toclevels: 2
+:sectnums:
+:sectnumlevels: 3
+
+
+== 배송비 정책
+=== 배송비 정책 생성
+
+include::{snippets}/delivery-policy/create/http-request.adoc[]
+include::{snippets}/delivery-policy/create/http-response.adoc[]
+include::{snippets}/delivery-policy/create/request-fields.adoc[]
+
+=== 배송비 정책 수정
+
+include::{snippets}/delivery-policy/update/http-request.adoc[]
+include::{snippets}/delivery-policy/update/http-response.adoc[]
+include::{snippets}/delivery-policy/update/request-fields.adoc[]
+
+=== 배송비 정책 삭제
+
+include::{snippets}/delivery-policy/delete/http-request.adoc[]
+include::{snippets}/delivery-policy/delete/http-response.adoc[]
+
+
+=== 배송비 정책 조회
+
+include::{snippets}/delivery-policy/get-list/http-request.adoc[]
+include::{snippets}/delivery-policy/get-list/http-response.adoc[]
+
+
+== 포장지
+=== 포장지 생성
+include::{snippets}/paving/create/http-request.adoc[]
+include::{snippets}/paving/create/http-response.adoc[]
+include::{snippets}/paving/create/request-fields.adoc[]
+
+=== 포장지 수정
+include::{snippets}/paving/update/http-request.adoc[]
+include::{snippets}/paving/update/http-response.adoc[]
+include::{snippets}/paving/update/request-fields.adoc[]
+
+=== 포장지 삭제
+include::{snippets}/paving/delete/http-request.adoc[]
+include::{snippets}/paving/delete/http-response.adoc[]
+
+=== 포장지 조회
+include::{snippets}/paving/get-list/http-request.adoc[]
+include::{snippets}/paving/get-list/http-response.adoc[]
