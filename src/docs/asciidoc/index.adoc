@@ -48,3 +48,179 @@ include::{snippets}/paving/delete/http-response.adoc[]
 === 포장지 조회
 include::{snippets}/paving/get-list/http-request.adoc[]
 include::{snippets}/paving/get-list/http-response.adoc[]
+
+== 장바구니
+
+=== 비회원 장바구니 생성
+include::{snippets}/cart/create-guest-cart/http-request.adoc[]
+include::{snippets}/cart/create-guest-cart/http-response.adoc[]
+include::{snippets}/cart/create-guest-cart/response-fields.adoc[]
+
+=== 회원 장바구니 생성
+include::{snippets}/cart/create-member-cart/http-request.adoc[]
+include::{snippets}/cart/create-member-cart/http-response.adoc[]
+
+=== 장바구니 항목 조회 - 회원
+include::{snippets}/cart/get-cart-items-member/http-request.adoc[]
+include::{snippets}/cart/get-cart-items-member/http-response.adoc[]
+include::{snippets}/cart/get-cart-items-member/response-fields.adoc[]
+
+=== 장바구니 항목 조회 - 비회원
+include::{snippets}/cart/get-cart-items-guest/http-request.adoc[]
+include::{snippets}/cart/get-cart-items-guest/http-response.adoc[]
+include::{snippets}/cart/get-cart-items-guest/response-fields.adoc[]
+
+=== 도서 장바구니 추가 - 회원
+include::{snippets}/cart/add-product-member/http-request.adoc[]
+include::{snippets}/cart/add-product-member/http-response.adoc[]
+include::{snippets}/cart/add-product-member/request-headers.adoc[]
+include::{snippets}/cart/add-product-member/query-parameters.adoc[]
+
+=== 도서 장바구니 추가 - 비회원
+include::{snippets}/cart/add-product-guest/http-request.adoc[]
+include::{snippets}/cart/add-product-guest/http-response.adoc[]
+include::{snippets}/cart/add-product-guest/query-parameters.adoc[]
+
+=== 수량 변경 - 회원
+include::{snippets}/cart/update-cart-item-quantity-member/http-request.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-member/http-response.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-member/path-parameters.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-member/request-headers.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-member/query-parameters.adoc[]
+
+=== 수량 변경 - 비회원
+include::{snippets}/cart/update-cart-item-quantity-guest/http-request.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-guest/http-response.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-guest/path-parameters.adoc[]
+include::{snippets}/cart/update-cart-item-quantity-guest/query-parameters.adoc[]
+
+=== 장바구니 삭제 - 회원
+include::{snippets}/cart/remove-product-member/http-request.adoc[]
+include::{snippets}/cart/remove-product-member/http-response.adoc[]
+include::{snippets}/cart/remove-product-member/request-headers.adoc[]
+include::{snippets}/cart/remove-product-member/query-parameters.adoc[]
+include::{snippets}/cart/remove-product-member/path-parameters.adoc[]
+
+=== 장바구니 삭제 - 비회원
+include::{snippets}/cart/remove-product-guest/http-request.adoc[]
+include::{snippets}/cart/remove-product-guest/http-response.adoc[]
+include::{snippets}/cart/remove-product-guest/query-parameters.adoc[]
+include::{snippets}/cart/remove-product-guest/path-parameters.adoc[]
+
+
+== Order API 문서
+
+== 임시 주문 정보 저장
+=== 회원
+include::{snippets}/order/orders-temporary-member/http-request.adoc[]
+include::{snippets}/order/orders-temporary-member/http-response.adoc[]
+include::{snippets}/order/orders-temporary-member/request-headers.adoc[]
+include::{snippets}/order/orders-temporary-member/request-fields.adoc[]
+
+=== 비회원
+include::{snippets}/order/order-item-save-guest/http-request.adoc[]
+include::{snippets}/order/order-item-save-guest/http-response.adoc[]
+include::{snippets}/order/order-item-save-guest/query-parameters.adoc[]
+include::{snippets}/order/order-item-save-guest/request-fields.adoc[]
+
+== 주문 목록 조회
+
+=== 회원
+include::{snippets}/orders/get-user-orders/http-request.adoc[]
+include::{snippets}/orders/get-user-orders/http-response.adoc[]
+include::{snippets}/orders/get-user-orders/request-headers.adoc[]
+include::{snippets}/orders/get-user-orders/query-parameters.adoc[]
+include::{snippets}/orders/get-user-orders/response-fields.adoc[]
+
+=== 관리자
+include::{snippets}/order/admin-get-all-orders/http-request.adoc[]
+include::{snippets}/order/admin-get-all-orders/http-response.adoc[]
+include::{snippets}/order/admin-get-all-orders/request-headers.adoc[]
+include::{snippets}/order/admin-get-all-orders/query-parameters.adoc[]
+include::{snippets}/order/admin-get-all-orders/response-fields.adoc[]
+
+== 주문 취소
+
+=== 회원
+include::{snippets}/order/order-cancel-success/http-request.adoc[]
+include::{snippets}/order/order-cancel-success/http-response.adoc[]
+include::{snippets}/order/order-cancel-success/request-headers.adoc[]
+include::{snippets}/order/order-cancel-success/path-parameters.adoc[]
+
+=== 비회원
+include::{snippets}/order/orders/guest-cancel/http-request.adoc[]
+include::{snippets}/order/orders/guest-cancel/http-response.adoc[]
+include::{snippets}/order/orders/guest-cancel/request-fields.adoc[]
+
+== 반품 요청
+
+=== 회원
+include::{snippets}/order/orders-refund/http-request.adoc[]
+include::{snippets}/order/orders-refund/http-response.adoc[]
+include::{snippets}/order/orders-refund/request-headers.adoc[]
+include::{snippets}/order/orders-refund/path-parameters.adoc[]
+include::{snippets}/order/orders-refund/query-parameters.adoc[]
+
+=== 비회원
+include::{snippets}/order/order-guest-refund/http-request.adoc[]
+include::{snippets}/order/order-guest-refund/http-response.adoc[]
+include::{snippets}/order/order-guest-refund/request-fields.adoc[]
+include::{snippets}/order/order-guest-refund/query-parameters.adoc[]
+
+== 주문 상태 변경 (관리자)
+include::{snippets}/order/admin-update-order-status/http-request.adoc[]
+include::{snippets}/order/admin-update-order-status/http-response.adoc[]
+include::{snippets}/order/admin-update-order-status/request-headers.adoc[]
+include::{snippets}/order/admin-update-order-status/path-parameters.adoc[]
+include::{snippets}/order/admin-update-order-status/query-parameters.adoc[]
+
+== 리뷰 가능 여부 확인
+
+=== 가능
+include::{snippets}/orders/is-reviewable/http-request.adoc[]
+include::{snippets}/orders/is-reviewable/http-response.adoc[]
+include::{snippets}/orders/is-reviewable/query-parameters.adoc[]
+
+=== 불가능
+include::{snippets}/order/order-is-reviewable-false/http-request.adoc[]
+include::{snippets}/order/order-is-reviewable-false/http-response.adoc[]
+include::{snippets}/order/order-is-reviewable-false/query-parameters.adoc[]
+include::{snippets}/order/order-is-reviewable-false/response-body.adoc[]
+
+== 주문 페이지 생성
+
+=== 회원 (임시 주문 정보 소비)
+include::{snippets}/order/orders-consume-order-page-member/http-request.adoc[]
+include::{snippets}/order/orders-consume-order-page-member/http-response.adoc[]
+include::{snippets}/order/orders-consume-order-page-member/request-headers.adoc[]
+include::{snippets}/order/orders-consume-order-page-member/response-body.adoc[]
+
+=== FeignException 발생 시
+include::{snippets}/orders/consume-feign-exception/http-request.adoc[]
+include::{snippets}/orders/consume-feign-exception/http-response.adoc[]
+include::{snippets}/orders/consume-feign-exception/request-headers.adoc[]
+include::{snippets}/orders/consume-feign-exception/response-fields.adoc[]
+
+== 주문 생성
+
+=== 회원
+include::{snippets}/order/orders-create-member/http-request.adoc[]
+include::{snippets}/order/orders-create-member/http-response.adoc[]
+include::{snippets}/order/orders-create-member/request-headers.adoc[]
+include::{snippets}/order/orders-create-member/request-fields.adoc[]
+include::{snippets}/order/orders-create-member/response-fields.adoc[]
+
+== 주문 상세 조회
+
+=== 회원
+include::{snippets}/order/orders-get-detail-member/http-request.adoc[]
+include::{snippets}/order/orders-get-detail-member/http-response.adoc[]
+include::{snippets}/order/orders-get-detail-member/request-headers.adoc[]
+include::{snippets}/order/orders-get-detail-member/path-parameters.adoc[]
+include::{snippets}/order/orders-get-detail-member/response-fields.adoc[]
+
+=== 비회원
+include::{snippets}/order/orders-get-detail-guest/http-request.adoc[]
+include::{snippets}/order/orders-get-detail-guest/http-response.adoc[]
+include::{snippets}/order/orders-get-detail-guest/request-fields.adoc[]
+include::{snippets}/order/orders-get-detail-guest/response-fields.adoc[]

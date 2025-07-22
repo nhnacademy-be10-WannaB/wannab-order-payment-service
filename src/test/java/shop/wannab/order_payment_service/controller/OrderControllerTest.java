@@ -109,7 +109,7 @@ void produceOrderPageDto_memberSuccess() throws Exception {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(sampleOrderItemListDto)))
             .andExpect(status().isOk())
-            .andDo(document("orders-temporary-member",
+            .andDo(document("order/orders-temporary-member",
                     requestHeaders(
                             headerWithName("X-USER-ID").description("회원 ID")
                     ),
@@ -140,7 +140,7 @@ void produceOrderPageDto_guestSuccess() throws Exception {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(orderItemListDto)))
             .andExpect(status().isOk())
-            .andDo(document("order-item-save-guest",
+            .andDo(document("order/order-item-save-guest",
                     queryParameters(
                             parameterWithName("guestId").description("비회원 ID")
                     ),
@@ -160,35 +160,75 @@ void produceOrderPageDto_guestSuccess() throws Exception {
 
 
     @Test
-    @DisplayName("회원 주문 목록 조회 성공")
-    void getOrdersByUser_success() throws Exception {
-        Long userId = 1L;
-        int page = 0;
-        int size = 10;
-        // OrderLookupResponse의 수동 생성자 (id, name, orderAt, status, shippedAt, totalPrice)를 사용
-        OrderLookupResponse order1 = new OrderLookupResponse(
-                1L, "첫 번째 주문", LocalDateTime.now().minusDays(5), OrderStatus.COMPLETED, LocalDateTime.now().minusDays(3), 15000);
-        OrderLookupResponse order2 = new OrderLookupResponse(
-                2L, "두 번째 주문", LocalDateTime.now().minusDays(10), OrderStatus.SHIPPING, LocalDateTime.now().minusDays(8), 25000);
+@DisplayName("회원 주문 목록 조회 성공")
+void getOrdersByUser_success() throws Exception {
+    Long userId = 1L;
+    int page = 0;
+    int size = 10;
 
-        List<OrderLookupResponse> orderList = Arrays.asList(order1, order2);
-        Page<OrderLookupResponse> expectedPage = new PageImpl<>(orderList, PageRequest.of(page, size), orderList.size());
+    OrderLookupResponse order1 = new OrderLookupResponse(
+            1L, "첫 번째 주문", LocalDateTime.now().minusDays(5), OrderStatus.COMPLETED, LocalDateTime.now().minusDays(3), 15000);
+    OrderLookupResponse order2 = new OrderLookupResponse(
+            2L, "두 번째 주문", LocalDateTime.now().minusDays(10), OrderStatus.SHIPPING, LocalDateTime.now().minusDays(8), 25000);
 
-        when(orderService.getOrdersByUser(eq(userId), eq(page), eq(size))).thenReturn(expectedPage);
+    List<OrderLookupResponse> orderList = Arrays.asList(order1, order2);
+    Page<OrderLookupResponse> expectedPage = new PageImpl<>(orderList, PageRequest.of(page, size), orderList.size());
 
-        mockMvc.perform(get("/api/orders")
-                        .header("X-USER-ID", userId)
-                        .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].orderId").value(order1.getOrderId()))
-                .andExpect(jsonPath("$.content[0].orderName").value(order1.getOrderName()))
-                .andExpect(jsonPath("$.content[0].orderStatus").value(order1.getOrderStatus().name()))
-                .andExpect(jsonPath("$.content[0].totalPrice").value(order1.getTotalPrice()))
-                .andExpect(jsonPath("$.content[1].orderId").value(order2.getOrderId()));
+    when(orderService.getOrdersByUser(eq(userId), eq(page), eq(size))).thenReturn(expectedPage);
 
-        verify(orderService, times(1)).getOrdersByUser(eq(userId), eq(page), eq(size));
-    }
+    mockMvc.perform(get("/api/orders")
+                    .header("X-USER-ID", userId)
+                    .param("page", String.valueOf(page))
+                    .param("size", String.valueOf(size)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].orderId").value(order1.getOrderId()))
+            .andExpect(jsonPath("$.content[0].orderName").value(order1.getOrderName()))
+            .andExpect(jsonPath("$.content[0].orderStatus").value(order1.getOrderStatus().name()))
+            .andExpect(jsonPath("$.content[0].totalPrice").value(order1.getTotalPrice()))
+            .andExpect(jsonPath("$.content[1].orderId").value(order2.getOrderId()))
+            .andDo(document("orders/get-user-orders",
+                    requestHeaders(
+                            headerWithName("X-USER-ID").description("회원의 고유 ID")
+                    ),
+                    queryParameters(
+                            parameterWithName("page").description("페이지 번호"),
+                            parameterWithName("size").description("페이지 크기")
+                    ),
+                    responseFields(
+                            fieldWithPath("content[].orderId").description("주문 ID"),
+                            fieldWithPath("content[].orderName").description("주문 이름"),
+                            fieldWithPath("content[].orderStatus").description("주문 상태"),
+                            fieldWithPath("content[].orderAt").description("주문 시간"),
+                            fieldWithPath("content[].shippedAt").description("배송 시간"),
+                            fieldWithPath("content[].totalPrice").description("총 가격"),
+                            fieldWithPath("content[].thumbnailUrl").description("썸네일 URL"),
+
+                            fieldWithPath("pageable.pageNumber").description("페이지 번호"),
+                            fieldWithPath("pageable.pageSize").description("페이지 크기"),
+                            fieldWithPath("pageable.sort.empty").description("정렬 조건이 비어있는지 여부"),
+                            fieldWithPath("pageable.sort.sorted").description("정렬되었는지 여부"),
+                            fieldWithPath("pageable.sort.unsorted").description("정렬되지 않았는지 여부"),
+                            fieldWithPath("pageable.offset").description("페이지 오프셋"),
+                            fieldWithPath("pageable.paged").description("페이징 여부"),
+                            fieldWithPath("pageable.unpaged").description("비 페이징 여부"),
+
+                            fieldWithPath("sort.empty").description("정렬 조건이 비어있는지 여부"),
+                            fieldWithPath("sort.sorted").description("정렬되었는지 여부"),
+                            fieldWithPath("sort.unsorted").description("정렬되지 않았는지 여부"),
+
+                            fieldWithPath("last").description("마지막 페이지 여부"),
+                            fieldWithPath("totalPages").description("전체 페이지 수"),
+                            fieldWithPath("totalElements").description("전체 요소 수"),
+                            fieldWithPath("size").description("페이지 크기"),
+                            fieldWithPath("number").description("현재 페이지 번호"),
+                            fieldWithPath("first").description("첫 페이지 여부"),
+                            fieldWithPath("numberOfElements").description("현재 페이지 내 요소 수"),
+                            fieldWithPath("empty").description("페이지가 비어있는지 여부")
+                    )
+            ));
+
+    verify(orderService, times(1)).getOrdersByUser(eq(userId), eq(page), eq(size));
+}
 
 
 @Test
@@ -214,7 +254,7 @@ void getAllOrders_success() throws Exception {
                     .param("orderStatus", searchDto.getOrderStatus().name()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content[0].orderId").value(adminOrder1.getOrderId()))
-            .andDo(document("admin-get-all-orders",
+            .andDo(document("order/admin-get-all-orders",
                     requestHeaders(
                             headerWithName("X-USER-ID").description("관리자 사용자 ID")
                     ),
@@ -272,7 +312,7 @@ void cancelOrder_success() throws Exception {
     mockMvc.perform(post("/api/orders/{orderId}/cancel", orderId)
                     .header("X-USER-ID", userId))
             .andExpect(status().isOk())
-            .andDo(document("order-cancel-success",
+            .andDo(document("order/order-cancel-success",
                     requestHeaders(
                             headerWithName("X-USER-ID").description("회원 사용자 ID")
                     ),
@@ -299,7 +339,7 @@ void updateStatus_success() throws Exception {
     mockMvc.perform(post("/api/admin/orders/{orderId}?newStatus=" + newStatus.name(), orderId)
                 .header("X-USER-ID", adminId))
         .andExpect(status().isOk())
-        .andDo(document("admin-update-order-status",
+        .andDo(document("order/admin-update-order-status",
                 requestHeaders(
                         headerWithName("X-USER-ID").description("관리자 사용자 ID")
                 ),
@@ -328,7 +368,7 @@ void refundOrder_success() throws Exception {
     mockMvc.perform(post("/api/orders/{orderId}/refund?reason={reason}", orderId, reason.name())
                 .header("X-USER-ID", userId))
         .andExpect(status().isOk())
-        .andDo(document("orders-refund",
+        .andDo(document("order/orders-refund",
                 requestHeaders(
                         headerWithName("X-USER-ID").description("회원 ID")
                 ),
@@ -356,7 +396,7 @@ void cancelGuestOrder_success() throws Exception {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(sampleGuestOrderRequest)))
             .andExpect(status().isOk())
-            .andDo(document("orders/guest-cancel",
+            .andDo(document("order/orders/guest-cancel",
                     requestFields(
                             fieldWithPath("orderId").description("주문 ID"),
                             fieldWithPath("password").description("주문 비밀번호")
@@ -387,7 +427,7 @@ void refundGuestOrder_success() throws Exception {
                     .content(objectMapper.writeValueAsString(sampleGuestOrderRequest))
                     .param("reason", reason.name()))
             .andExpect(status().isOk())
-            .andDo(document("order-guest-refund",
+            .andDo(document("order/order-guest-refund",
                     requestFields(
                             fieldWithPath("orderId").description("주문 ID"),
                             fieldWithPath("password").description("비회원 비밀번호")
@@ -433,7 +473,7 @@ void isReviewable_false() throws Exception {
                     .param("obId", String.valueOf(obId)))
             .andExpect(status().isOk())
             .andExpect(content().string("false"))
-            .andDo(document("order-is-reviewable-false",
+            .andDo(document("order/order-is-reviewable-false",
                     queryParameters(
                             parameterWithName("obId").description("주문 도서 ID")
                     ),
@@ -456,7 +496,7 @@ void consumeOrderPageDto_member_success() throws Exception {
     mockMvc.perform(post("/api/orders")
                     .header("X-USER-ID", userId))
             .andExpect(status().isOk())
-            .andDo(document("orders-consume-order-page-member",
+            .andDo(document("order/orders-consume-order-page-member",
                     requestHeaders(
                             headerWithName("X-USER-ID").description("회원 ID")
                     ),
@@ -519,7 +559,7 @@ void processOrder_member_success() throws Exception {
             .andExpect(jsonPath("$.orderId").value(mockResponse.getOrderId()))
             .andExpect(jsonPath("$.orderName").value(mockResponse.getOrderName()))
             .andExpect(jsonPath("$.payAmount").value(mockResponse.getPayAmount()))
-            .andDo(document("orders-create-member",
+            .andDo(document("order/orders-create-member",
                     requestHeaders(
                             headerWithName("X-USER-ID").description("회원 ID")
                     ),
@@ -580,7 +620,7 @@ void getOrderDetail_member_success() throws Exception {
     mockMvc.perform(get("/api/orders/{orderId}", orderId)
                     .header("X-USER-ID", userId))
             .andExpect(status().isOk())
-            .andDo(document("orders-get-detail-member",
+            .andDo(document("order/orders-get-detail-member",
                 requestHeaders(
                     headerWithName("X-USER-ID").description("회원 ID")
                 ),
@@ -653,7 +693,7 @@ void getOrderDetail_guest_success() throws Exception {
             .andExpect(jsonPath("$.books[0].thumbnailUrl").value("https://example.com/thumbnail1.jpg"))
             .andExpect(jsonPath("$.books[1].bookId").value(2))
             .andExpect(jsonPath("$.books[1].title").value("스프링 인 액션"))
-            .andDo(document("orders-get-detail-guest",
+            .andDo(document("order/orders-get-detail-guest",
                     requestFields(
                             fieldWithPath("orderId").description("주문 ID"),
                             fieldWithPath("password").description("비회원 주문 비밀번호")
