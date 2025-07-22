@@ -224,3 +224,12 @@ include::{snippets}/order/orders-get-detail-guest/http-request.adoc[]
 include::{snippets}/order/orders-get-detail-guest/http-response.adoc[]
 include::{snippets}/order/orders-get-detail-guest/request-fields.adoc[]
 include::{snippets}/order/orders-get-detail-guest/response-fields.adoc[]
+
+
+== 결제
+
+=== 결제성공
+include::{snippets}/payments/confirm-success/http-request.adoc[]
+include::{snippets}/payments/confirm-success/http-response.adoc[]
+include::{snippets}/payments/confirm-success/request-fields.adoc[]
+include::{snippets}/payments/confirm-success/response-fields.adoc[]
