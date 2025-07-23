@@ -6,6 +6,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -70,7 +71,7 @@ public class OrderController {
     }
 
 
-    @PostMapping("/orders/new")
+    @PostMapping(path = "/orders/new")
     OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody @Valid OrderSubmitDto orderSubmitDto) {
         if (Objects.nonNull(userId)) {
             return orderService.createOrder(orderSubmitDto, userId);

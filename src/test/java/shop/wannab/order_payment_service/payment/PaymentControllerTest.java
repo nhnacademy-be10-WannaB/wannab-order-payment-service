@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -22,9 +23,18 @@ import shop.wannab.order_payment_service.service.PaymentService;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 
 @WebMvcTest(PaymentController.class)
 @ActiveProfiles("ci")
@@ -32,6 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.cloud.config.enabled=false",
         "spring.cloud.config.import-check.enabled=false"
 })
+@AutoConfigureRestDocs
 class PaymentControllerTest {
 
     @Autowired
@@ -65,7 +76,22 @@ class PaymentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paymentKey").value(resultDto.getPaymentKey()))
                 .andExpect(jsonPath("$.orderId").value(resultDto.getOrderId()))
-                .andExpect(jsonPath("$.amount").value(resultDto.getAmount()));
+                .andExpect(jsonPath("$.amount").value(resultDto.getAmount()))
+                .andDo(document("payments/confirm-success",
+                        pathParameters(
+                                parameterWithName("provider").description("결제 서비스 제공자 이름")
+                        ),
+                        requestFields(
+                                fieldWithPath("paymentKey").description("결제 키"),
+                                fieldWithPath("orderId").description("주문 ID"),
+                                fieldWithPath("amount").description("결제 금액")
+                        ),
+                        responseFields(
+                                fieldWithPath("paymentKey").description("결제 키"),
+                                fieldWithPath("orderId").description("주문 ID"),
+                                fieldWithPath("amount").description("결제 금액")
+                        )
+                ));
     }
 
     @Test

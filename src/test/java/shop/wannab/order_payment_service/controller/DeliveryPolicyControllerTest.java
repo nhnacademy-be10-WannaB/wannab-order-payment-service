@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import shop.wannab.order_payment_service.entity.DeliveryPolicy;
@@ -19,11 +21,22 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+
 @WebMvcTest(DeliveryPolicyController.class)
 @ActiveProfiles("ci")
+@AutoConfigureRestDocs
 class DeliveryPolicyControllerTest {
 
     @Autowired
@@ -53,7 +66,20 @@ class DeliveryPolicyControllerTest {
                 .andExpect(jsonPath("$.id").value(saved.getId()))
                 .andExpect(jsonPath("$.name").value("기본 배송"))
                 .andExpect(jsonPath("$.minPrice").value(30000))
-                .andExpect(jsonPath("$.fee").value(2500));
+                .andExpect(jsonPath("$.fee").value(2500))
+                .andDo(document("delivery-policy/create",
+                        requestFields(
+                                fieldWithPath("name").description("배송비정책 이름"),
+                                fieldWithPath("minPrice").description("주문 최소금액"),
+                                fieldWithPath("fee").description("배송비")
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("생성된 배송비정책 ID"),
+                                fieldWithPath("name").description("배송비정책 이름"),
+                                fieldWithPath("minPrice").description("주문 최소금액"),
+                                fieldWithPath("fee").description("배송비")
+                        )
+                ));
     }
 
     @Test
@@ -64,14 +90,30 @@ class DeliveryPolicyControllerTest {
 
         when(deliveryPolicyService.updateDeliveryPolicy(eq(2L), any())).thenReturn(updated);
 
-        mockMvc.perform(put("/api/admin/delivery-policy/2")
+        mockMvc.perform(RestDocumentationRequestBuilders.put("/api/admin/delivery-policy/{dp-id}", updated.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(2L))
                 .andExpect(jsonPath("$.name").value("새 배송정책"))
                 .andExpect(jsonPath("$.minPrice").value(40000))
-                .andExpect(jsonPath("$.fee").value(2000));
+                .andExpect(jsonPath("$.fee").value(2000))
+                .andDo(document("delivery-policy/update",
+                        pathParameters(
+                                parameterWithName("dp-id").description("수정할 배송비정책 ID")
+                        ),
+                        requestFields(
+                                fieldWithPath("name").description("수정할 배송비정책 이름"),
+                                fieldWithPath("minPrice").description("수정할 주문 최소금액"),
+                                fieldWithPath("fee").description("수정할 배송비")
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("배송비정책 ID"),
+                                fieldWithPath("name").description("수정된 배송비정책 이름"),
+                                fieldWithPath("minPrice").description("수정된 주문 최소금액"),
+                                fieldWithPath("fee").description("수정된 배송비")
+                        )
+                ));
     }
 
     @Test
@@ -79,8 +121,13 @@ class DeliveryPolicyControllerTest {
     void deleteDeliveryPolicy_success() throws Exception {
         doNothing().when(deliveryPolicyService).deleteDeliveryPolicy(3L);
 
-        mockMvc.perform(delete("/api/admin/delivery-policy/3"))
-                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/admin/delivery-policy/{dp-id}", 3))
+                .andExpect(status().isOk())
+                .andDo(document("delivery-policy/delete",
+                        pathParameters(
+                                parameterWithName("dp-id").description("삭제할 포장 ID")
+                        )
+                ));
 
         verify(deliveryPolicyService).deleteDeliveryPolicy(3L);
     }
@@ -99,6 +146,14 @@ class DeliveryPolicyControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].name").value("기본"))
-                .andExpect(jsonPath("$[1].fee").value(1000));
+                .andExpect(jsonPath("$[1].fee").value(1000))
+                .andDo(document("delivery-policy/get-list",
+                        responseFields(
+                                fieldWithPath("[].id").description("배송비정책 ID"),
+                                fieldWithPath("[].name").description("정책 이름"),
+                                fieldWithPath("[].minPrice").description("최소 주문금액"),
+                                fieldWithPath("[].fee").description("배송비")
+                        )
+                ));
     }
 }
