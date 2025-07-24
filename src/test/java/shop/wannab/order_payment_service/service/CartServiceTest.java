@@ -140,4 +140,24 @@ class CartServiceTest {
         assertThat(result).isNull();
         verify(cartRepository, times(1)).createCart(userIdentifier);
     }
+
+    @Test
+@DisplayName("게스트 장바구니 생성 - userIdentifier가 null인 경우")
+void createCart_GuestUser() {
+    // Given
+    Long userIdentifier = null;
+
+    doNothing().when(cartRepository).createCart(anyLong());
+
+    // When
+    GuestCartCookieDto result = cartService.createCart(userIdentifier);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getValue()).isNegative();
+    assertThat(result.getCookieMaxAge()).isEqualTo(60 * 60 * GUEST_CART_TTL);
+
+    verify(cartRepository, times(1)).createCart(anyLong());
+}
+
 }
