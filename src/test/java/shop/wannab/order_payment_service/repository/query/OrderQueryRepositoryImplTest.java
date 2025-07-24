@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,12 +18,10 @@ import shop.wannab.order_payment_service.entity.Order;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.dto.OrderLookupResponse;
 import shop.wannab.order_payment_service.entity.dto.OrderSearchDto;
-
 import org.junit.jupiter.api.BeforeEach;
 
 
 import jakarta.persistence.EntityManager;
-import shop.wannab.order_payment_service.repository.OrderRepository;
 
 @SpringBootTest
 @Transactional
@@ -31,8 +30,10 @@ class OrderQueryRepositoryImplTest {
     @Autowired
     private EntityManager em;
 
+
     @Autowired
-    private OrderRepository orderRepository;
+    @Qualifier(value = "orderQueryRepositoryImpl")
+    private OrderQueryRepository orderQueryRepository;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +81,7 @@ class OrderQueryRepositoryImplTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<OrderLookupResponse> result = orderRepository.searchOrders(dto, pageable);
+        Page<OrderLookupResponse> result = orderQueryRepository.searchOrders(dto, pageable);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(2);
@@ -95,7 +96,7 @@ class OrderQueryRepositoryImplTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<OrderLookupResponse> result = orderRepository.searchOrders(dto, pageable);
+        Page<OrderLookupResponse> result = orderQueryRepository.searchOrders(dto, pageable);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -111,7 +112,7 @@ class OrderQueryRepositoryImplTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<OrderLookupResponse> result = orderRepository.searchOrders(dto, pageable);
+        Page<OrderLookupResponse> result = orderQueryRepository.searchOrders(dto, pageable);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -126,7 +127,7 @@ class OrderQueryRepositoryImplTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<OrderLookupResponse> result = orderRepository.searchOrders(dto, pageable);
+        Page<OrderLookupResponse> result = orderQueryRepository.searchOrders(dto, pageable);
 
         // then
         OrderLookupResponse response = result.getContent().get(0);
