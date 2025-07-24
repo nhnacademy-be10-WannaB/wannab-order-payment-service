@@ -3,8 +3,6 @@ package shop.wannab.order_payment_service.entity.payment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
-import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.strategy.TossPaymentStrategy;
 import shop.wannab.order_payment_service.service.PaymentService;
 

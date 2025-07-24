@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.strategy.KakaoPaymentStrategy;
 

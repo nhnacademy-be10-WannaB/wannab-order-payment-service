@@ -12,7 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.Order;
 import shop.wannab.order_payment_service.entity.OrderStatus;
@@ -27,7 +26,6 @@ import shop.wannab.order_payment_service.repository.OrderRepository;
 
 @SpringBootTest
 @Transactional
-@ActiveProfiles("test")
 class OrderQueryRepositoryImplTest {
 
     @Autowired
