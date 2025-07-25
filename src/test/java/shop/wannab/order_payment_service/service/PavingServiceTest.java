@@ -10,6 +10,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import shop.wannab.order_payment_service.entity.Paving;
 import shop.wannab.order_payment_service.entity.dto.PavingRequest;
 import shop.wannab.order_payment_service.entity.dto.PavingResponse;
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.PavingRepository;
 
 import java.util.Arrays;
@@ -82,8 +84,8 @@ class PavingServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> pavingService.createPaving(existingPavingRequest))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 존재하는 포장지 이름 입니다.");
+                .isInstanceOf(OrderPaymentServiceException.class)
+                .hasMessage("이미 존재하는 포장지 이름입니다.");
 
         verify(pavingRepository, times(1)).existsByName(existingPavingRequest.getName());
         verify(pavingRepository, never()).save(any(Paving.class));
@@ -142,8 +144,9 @@ class PavingServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> pavingService.updatePaving(nonExistentId, newPavingRequest))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("존재하지않는 포장지입니다.");
+
+                .isInstanceOf(OrderPaymentServiceException.class)
+                .hasMessage("존재하지 않는 포장지입니다.");
 
         verify(pavingRepository, times(1)).findById(nonExistentId);
         verify(pavingRepository, never()).findByName(anyString());
@@ -162,8 +165,8 @@ class PavingServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> pavingService.updatePaving(idToUpdate, requestWithConflictingName))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(requestWithConflictingName.getName());
+                .isInstanceOf(OrderPaymentServiceException.class)
+                .hasMessage(OrderPaymentErrorCode.PAVING_ALREADY_EXISTS.getMessage());
 
         verify(pavingRepository, times(1)).findById(idToUpdate);
         verify(pavingRepository, times(1)).findByName(requestWithConflictingName.getName());
@@ -194,8 +197,8 @@ class PavingServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> pavingService.deletePaving(nonExistentId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("존재하지않는 포장지입니다.");
+                .isInstanceOf(OrderPaymentServiceException.class)
+                .hasMessage("존재하지 않는 포장지입니다.");
 
         verify(pavingRepository, times(1)).findById(nonExistentId);
         verify(pavingRepository, never()).deleteById(anyLong());

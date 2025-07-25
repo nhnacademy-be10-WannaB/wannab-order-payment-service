@@ -20,6 +20,7 @@ import shop.wannab.order_payment_service.entity.dto.DeliveryPolicyRequest;
 import shop.wannab.order_payment_service.entity.dto.DeliveryPolicyResponse;
 import shop.wannab.order_payment_service.exception.DeliveryPolicyAlreadyExistsException;
 import shop.wannab.order_payment_service.exception.DeliveryPolicyNotFoundException;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.DeliveryPolicyRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -279,7 +280,7 @@ class DeliveryPolicyServiceImplTest {
         when(deliveryPolicyRepository.findByName("기본배송비")).thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(OrderPaymentServiceException.class,
                 () -> deliveryPolicyService.getDefaultPolicy());
 
         verify(deliveryPolicyRepository, times(1)).findByName("기본배송비");
