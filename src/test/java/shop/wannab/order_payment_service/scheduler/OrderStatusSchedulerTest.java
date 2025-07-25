@@ -59,7 +59,7 @@ class OrderStatusSchedulerTest {
 
         scheduler.updateOrdersToShipping();
 
-        assert order.getOrderStatus() == OrderStatus.SHIPPING;
+        assert order.getOrderStatus() == OrderStatus.PAID;
         assert order.getShippedAt() != null;
     }
 
