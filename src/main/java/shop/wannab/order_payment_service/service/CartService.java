@@ -2,7 +2,7 @@ package shop.wannab.order_payment_service.service;
 
 import static shop.wannab.order_payment_service.constants.Constants.GUEST_CART_TTL;
 
-import jakarta.servlet.http.Cookie;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -23,6 +23,7 @@ public class CartService {
     private final BookClient bookClient;
     private final CartRepository cartRepository;
     private final CartBackupScheduler cartBackupScheduler;
+    private final Random random = new SecureRandom();
 
     @Transactional(readOnly = true)
     public OrderBookInfoListDto getCartItemInfos(Long userIdentifier) {
@@ -59,7 +60,6 @@ public class CartService {
     }
 
     private long createGuestId() {
-        Random random = new Random();
         return -random.nextLong(9000000) - 1000000;
     }
 
