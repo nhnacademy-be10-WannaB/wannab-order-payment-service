@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +16,10 @@ import shop.wannab.order_payment_service.client.CouponClient;
 import shop.wannab.order_payment_service.client.UserClient;
 import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
-
 import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
 import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.*;
-import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
+
 
 @Slf4j
 @Service
@@ -165,7 +163,7 @@ public class OrderService {
         .collect(Collectors.toMap(
             BookOrderSubmitDto::getBookId,
             BookOrderSubmitDto::getBookQuantity
-        )); //TODO: 개선 여지 O
+        ));
 
         for (BookIdTitlePriceDto info : orderBookInfoListDto.getIdTitlePriceDtos()) {
             long bookId = info.getBookId();
@@ -195,24 +193,6 @@ public class OrderService {
         }
         return totalPavingPrice;
     }
-
-//    private LocalDateTime getShippingDate() { //출고일 정책
-//        LocalDateTime now = LocalDateTime.now();
-//
-//        // 15시 이후면 다음 날로
-//        if (now.toLocalTime().isAfter(LocalTime.of(15, 0))) {
-//            now = now.plusDays(1);
-//        }
-//
-//        LocalDate date = now.toLocalDate();
-//
-//        // 주말이면 월요일까지 이동
-//        while (date.getDayOfWeek() == DayOfWeek.SATURDAY ||
-//               date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-//            now = date.plusDays(1).atStartOfDay();
-//        }
-//        return now;
-//    }
 
     private String createOrderName(String oneOfBookTitle, int orderItemCount) {
         if (orderItemCount > 1) {
@@ -474,13 +454,6 @@ public class OrderService {
     public void updateStatus(Long userId, Long orderId, OrderStatus newStatus){
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
-//        // ADMIN 확인
-//        String role = userClient.getUserRole(userId);
-//
-//        if (!"ADMIN".equalsIgnoreCase(role)) {
-//            throw new IllegalArgumentException("관리자만 주문 전체 조회 가능");
-//        }
-
         order.setOrderStatus(newStatus);
 
         if(newStatus.equals(OrderStatus.SHIPPING)){
@@ -488,8 +461,6 @@ public class OrderService {
         }
     }
 
-
-    //반품 reason부분은 추후에 enum으로 수정
 
     //반품 (회원)
     @Transactional

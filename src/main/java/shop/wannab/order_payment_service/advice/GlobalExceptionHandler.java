@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException e) {
         ErrorCode errorCode = e.getErrorCode();
-        log.warn(errorCode.getMessage());
+        log.warn("statusCode: {}, errorCode : {}, message : {}", errorCode.getStatus(), e.getErrorCode(), e.getMessage());
         ErrorResponse response = new ErrorResponse(errorCode.getCode(), errorCode.getMessage());
         return new ResponseEntity<>(response, org.springframework.http.HttpStatus.valueOf(errorCode.getStatus()));
     }

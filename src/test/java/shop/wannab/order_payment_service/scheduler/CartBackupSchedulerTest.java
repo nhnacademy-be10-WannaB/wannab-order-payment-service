@@ -9,6 +9,7 @@ import shop.wannab.order_payment_service.entity.CartItemEntity;
 import shop.wannab.order_payment_service.entity.dto.CartItem;
 import shop.wannab.order_payment_service.repository.CartRepository;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -69,4 +70,20 @@ class CartBackupSchedulerTest {
         assertThat(Thread.getAllStackTraces().keySet()).anyMatch(thread ->
                 thread.getName().contains("pool-") && thread.isAlive());
     }
+
+    @Test
+    @DisplayName("redis에서 가져온 데이터가 비어있으면 저장하지 않음")
+    void testWriteBackCart_doesNotSaveWhenEmpty() throws Exception {
+    // given
+        Long userId = 3L;
+        when(cartRepository.getCartItems(userId)).thenReturn(Collections.emptyList());
+
+        var method = CartBackupScheduler.class.getDeclaredMethod("writeBackCart", Long.class);
+        method.setAccessible(true);
+        method.invoke(cartBackupScheduler, userId);
+
+        // then
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
 }

@@ -7,12 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import shop.wannab.order_payment_service.advice.GlobalExceptionHandler;
 import shop.wannab.order_payment_service.entity.dto.GuestCartCookieDto;
 import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.service.CartService;
 
 import java.util.Collections;
@@ -20,6 +24,7 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -31,6 +36,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 @WebMvcTest(CartController.class)
 @ActiveProfiles("ci")
 @AutoConfigureRestDocs
+@Import({GlobalExceptionHandler.class})
 class CartControllerTest {
 
     @Autowired
@@ -153,6 +159,37 @@ void addProductToCart_guest_success() throws Exception {
             ));
 }
 
+
+@Test
+@DisplayName("도서 장바구니 추가 - 음수 bookId 예외 발생")
+void addProductToCart_invalidBookId_shouldReturnBadRequest() throws Exception {
+    // Given
+    long invalidBookId = -10L;
+    long userId = 1L;
+
+    doThrow(new OrderPaymentServiceException(OrderPaymentErrorCode.WRONG_BOOK_ID))
+            .when(cartService).addCartItem(userId, invalidBookId);
+
+    // When & Then
+    mockMvc.perform(post("/api/cart/books?bookId=" + invalidBookId)
+                    .header("X-USER-ID", String.valueOf(userId)))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("ORDER-PAYMENT-8001")) // 실제 코드명으로 수정
+            .andExpect(jsonPath("$.message").value("잘못된 도서정보입니다.")) // 실제 메시지로 수정
+            .andDo(document("cart/add-product-invalid-book-id",
+                requestHeaders(
+                    headerWithName("X-USER-ID").description("로그인한 유저의 ID (비로그인 시 null)").optional()
+                ),
+                queryParameters(
+                    parameterWithName("guestId").optional().description("비회원 식별자"),
+                    parameterWithName("bookId").description("장바구니에 추가할 도서 ID (음수 불가)")
+                ),
+                responseFields(
+                    fieldWithPath("code").description("에러 코드"),
+                    fieldWithPath("message").description("에러 메시지")
+                )
+            ));
+}
 
 
 

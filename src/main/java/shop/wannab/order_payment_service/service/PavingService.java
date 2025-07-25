@@ -47,7 +47,7 @@ public class PavingService {
         // 이름 중복검사 -> 같은 정책수정에 대해서는 이름중복예외처리 x
         pavingRepository.findByName(request.getName()).ifPresent(pv -> {
             if (!pv.getId().equals(id)) {
-                throw new IllegalArgumentException(request.getName());
+                throw new OrderPaymentServiceException(OrderPaymentErrorCode.PAVING_ALREADY_EXISTS);
             }
         });
 
@@ -63,7 +63,7 @@ public class PavingService {
     public void deletePaving(Long id){
         Paving paving = pavingRepository.findById(id).orElseThrow(()-> new OrderPaymentServiceException(OrderPaymentErrorCode.PAVING_NOT_EXISTS));
 
-        pavingRepository.deleteById(id);
+        pavingRepository.deleteById(paving.getId());
     }
 
     /**

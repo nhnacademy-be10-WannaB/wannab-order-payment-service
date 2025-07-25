@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 import shop.wannab.order_payment_service.entity.OrderStatus;
 import shop.wannab.order_payment_service.entity.QOrder;
@@ -19,6 +20,7 @@ import shop.wannab.order_payment_service.entity.dto.OrderLookupResponse;
 import shop.wannab.order_payment_service.entity.dto.OrderSearchDto;
 
 @RequiredArgsConstructor
+@Repository
 public class OrderQueryRepositoryImpl implements OrderQueryRepository{
 
     private final JPAQueryFactory queryFactory;
