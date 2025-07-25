@@ -54,7 +54,7 @@ public class PaymentService {
     private final TossPaymentsProperties tossPaymentsProperties;
 
     @Transactional
-    public FinalOrderResultDto confirmAndProcessPayment(TossConfirmRequestDto requestDto) {
+    public FinalOrderResultDto confirmAndProcessTossPayment(TossConfirmRequestDto requestDto) {
         log.debug("confirmAndProcessPayment Hi");
         log.debug("anybody there : {}, {}", tossPaymentsProperties.getSecretKey(), tossPaymentsProperties.getPrefix());
         String encodedAuth = Base64.getEncoder().encodeToString((tossPaymentsProperties.getSecretKey() + ":").getBytes(StandardCharsets.UTF_8));
@@ -145,6 +145,8 @@ public class PaymentService {
                     tossResponse.getOrderId(),
                     tossResponse.getTotalAmount()
             );
+        } catch (PaymentProcessingException e) {
+            throw e;
         } catch (Exception e) {
             order.setOrderStatus(OrderStatus.FAILED);
             payment.setStatus("API_CALL_FAILED");
@@ -160,7 +162,6 @@ public class PaymentService {
 
     private void savePaymentFailure(Payment payment, String errorCode, String message) {
         Failure failure = new Failure(
-                payment.getPaymentKey(),
                 payment,
                 errorCode,
                 message

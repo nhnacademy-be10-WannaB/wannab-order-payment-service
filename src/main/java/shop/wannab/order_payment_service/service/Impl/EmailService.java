@@ -30,7 +30,6 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.info("이메일 전송 실패");
-            e.printStackTrace();
         }
     }
 }

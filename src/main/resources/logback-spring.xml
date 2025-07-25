@@ -18,7 +18,6 @@
     </appender>
 
     <logger name="shop.wannab.order_payment_service" level="DEBUG">
-        <appender-ref ref="ROLLING_FILE"/>
         <appender-ref ref="CONSOLE"/>
     </logger>
 
