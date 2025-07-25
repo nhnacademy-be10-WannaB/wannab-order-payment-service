@@ -27,6 +27,8 @@ import shop.wannab.order_payment_service.entity.payment.dto.FinalOrderResultDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDto;
 import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmResponseDto;
 import shop.wannab.order_payment_service.event.OrderCreatedEvent;
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.exception.PaymentProcessingException;
 import shop.wannab.order_payment_service.properties.TossPaymentsProperties;
 import shop.wannab.order_payment_service.repository.CancelRepository;
@@ -67,7 +69,7 @@ public class PaymentService {
         log.debug("Prefix 파싱 완료 orderId : {}",orderId);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
         log.debug("orderId로 order 찾기 완료 orderId : {}",orderId);
 
         Payment payment = new Payment();

@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.Paving;
 import shop.wannab.order_payment_service.entity.dto.PavingRequest;
 import shop.wannab.order_payment_service.entity.dto.PavingResponse;
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.PavingRepository;
 
 @Service
@@ -24,7 +26,7 @@ public class PavingService {
 
         //이름 중복 검사
         if(pavingRepository.existsByName(request.getName())){
-            throw new IllegalArgumentException("이미 존재하는 포장지 이름 입니다.");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.PAVING_ALREADY_EXISTS);
         }
 
         Paving paving = new Paving();
@@ -40,12 +42,12 @@ public class PavingService {
      */
     public Paving updatePaving(Long id, PavingRequest request){
 
-        Paving paving = pavingRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("존재하지않는 포장지입니다."));
+        Paving paving = pavingRepository.findById(id).orElseThrow(()-> new OrderPaymentServiceException(OrderPaymentErrorCode.PAVING_NOT_EXISTS));
 
         // 이름 중복검사 -> 같은 정책수정에 대해서는 이름중복예외처리 x
         pavingRepository.findByName(request.getName()).ifPresent(pv -> {
             if (!pv.getId().equals(id)) {
-                throw new IllegalArgumentException(request.getName());
+                throw new OrderPaymentServiceException(OrderPaymentErrorCode.PAVING_ALREADY_EXISTS);
             }
         });
 
@@ -59,9 +61,9 @@ public class PavingService {
      * 삭제
      */
     public void deletePaving(Long id){
-        Paving paving = pavingRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("존재하지않는 포장지입니다."));
+        Paving paving = pavingRepository.findById(id).orElseThrow(()-> new OrderPaymentServiceException(OrderPaymentErrorCode.PAVING_NOT_EXISTS));
 
-        pavingRepository.deleteById(id);
+        pavingRepository.deleteById(paving.getId());
     }
 
     /**

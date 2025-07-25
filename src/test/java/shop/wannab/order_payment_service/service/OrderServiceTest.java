@@ -197,6 +197,94 @@ public class OrderServiceTest {
     }
 
     @Test
+    void testTotalPavingPriceApplied() {
+    // Given
+    BookOrderSubmitDto bookOrder = new BookOrderSubmitDto(1L, 1, 5L, null); // pavingId = 5L
+    OrderSubmitDto orderSubmitDto = new OrderSubmitDto(
+            List.of(bookOrder),
+            "1",
+            0,
+            LocalDate.now(),
+            "abc@abc.com",
+            "010-1111-2222",
+            "홍길동",
+            "서울시 어딘가",
+            "1234",
+            null
+    );
+
+    doNothing().when(bookClient).validateOrderItems(any());
+
+    BookIdTitlePriceDto bookInfo = new BookIdTitlePriceDto(1L, "테스트책", 10000);
+    when(bookClient.getBookSimpleInfos(any())).thenReturn(new BookIdTitlePriceListDto(List.of(bookInfo)));
+
+    DeliveryPolicy policy = new DeliveryPolicy();
+    policy.setFee(2500);
+    policy.setMinPrice(0);
+    policy.setName("기본배송");
+    when(deliveryPolicyService.findApplicablePolicy(anyInt())).thenReturn(policy);
+
+    when(couponClient.getApplyCoupons(any(), any())).thenReturn(ResponseEntity.ok(Collections.emptyList()));
+    when(orderRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(orderBookRepository.saveAll(any())).thenReturn(Collections.emptyList());
+    doNothing().when(pointHistoryCreateDtoRepository).save(any());
+
+    Paving paving = new Paving(5L,"flowerPaving", 2000);
+    when(pavingRepository.findById(5L)).thenReturn(Optional.of(paving));
+
+    // When
+    OrderInfoForPayment result = orderService.createOrder(orderSubmitDto, 1L);
+
+    // Then
+    assertNotNull(result);
+}
+
+    @Test
+    void testCreateOrder_withDiscount() {
+    BookOrderSubmitDto bookOrder = new BookOrderSubmitDto(1L, 2, null, 101L); // 책에 쿠폰 적용
+    OrderSubmitDto orderSubmitDto = new OrderSubmitDto(
+            List.of(bookOrder),
+            null,
+            10000,
+            LocalDate.of(2025, 7, 19),
+            "test@example.com",
+            "010-1234-5678",
+            "홍길동",
+            "서울시",
+            "1234",
+            null
+    );
+
+    doNothing().when(bookClient).validateOrderItems(any());
+    when(bookClient.getBookSimpleInfos(any()))
+            .thenReturn(new BookIdTitlePriceListDto(List.of(new BookIdTitlePriceDto(1L, "테스트책", 5000))));
+
+    DeliveryPolicy policy = new DeliveryPolicy();
+    policy.setFee(2500);
+    policy.setMinPrice(0);
+    policy.setName("기본배송");
+    when(deliveryPolicyService.findApplicablePolicy(anyInt())).thenReturn(policy);
+
+    List<TryApplyCouponsResponseDto> couponDiscountInfos = List.of(
+            new TryApplyCouponsResponseDto(101L, 1000, DiscountType.FIXED, 1L)
+    );
+    when(couponClient.getApplyCoupons(eq(userId), any()))
+        .thenReturn(ResponseEntity.ok(couponDiscountInfos));
+
+    when(orderRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(orderBookRepository.saveAll(any())).thenReturn(Collections.emptyList());
+    doNothing().when(pointHistoryCreateDtoRepository).save(any());
+
+    // When
+    OrderInfoForPayment result = orderService.createOrder(orderSubmitDto, userId);
+
+    // Then
+    assertNotNull(result);
+    // 할인 금액이 반영된 상태나 로그, 혹은 내부 필드가 있다면 검증
+}
+
+
+    @Test
     public void testGetOrders_admin() {
         OrderSearchDto searchDto = new OrderSearchDto();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("orderAt").descending());
@@ -261,7 +349,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    void createOrderPageRequestDto_userIdIsNegative_returnsDtoWithDefaults() {
+    void createOrderPageRequestDto_guest_returnsDtoWithDefaults() {
         // given
         Long guestId = -1L;
         OrderItemListDto orderItemListDto = new OrderItemListDto(List.of(
@@ -304,7 +392,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    void createOrderPageRequestDto_withUserIdPositive_returnsPopulatedDto() {
+    void createOrderPageRequestDto_User_returnsPopulatedDto() {
         // given
         List<CartItem> items = List.of(new CartItem(10L, 2));
         OrderItemListDto orderItemListDto = new OrderItemListDto(items);

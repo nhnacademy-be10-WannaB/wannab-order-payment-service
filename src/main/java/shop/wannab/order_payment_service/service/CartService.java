@@ -14,6 +14,8 @@ import shop.wannab.order_payment_service.entity.dto.CartItem;
 import shop.wannab.order_payment_service.entity.dto.GuestCartCookieDto;
 import shop.wannab.order_payment_service.entity.dto.OrderBookInfoListDto;
 import shop.wannab.order_payment_service.entity.dto.OrderItemListDto;
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.CartRepository;
 import shop.wannab.order_payment_service.scheduler.CartBackupScheduler;
 
@@ -27,24 +29,42 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public OrderBookInfoListDto getCartItemInfos(Long userIdentifier) {
+        if (Objects.isNull(userIdentifier)) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.CART_BAD_REQUEST);
+        }
         List<CartItem> cartItems = cartRepository.getCartItems(userIdentifier);
         return bookClient.getOrderBookInfos(new OrderItemListDto(cartItems));
     }
 
     @Transactional
     public void addCartItem(Long userIdentifier, long bookId) {
+        if (Objects.isNull(userIdentifier)) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.CART_BAD_REQUEST);
+        } else if (bookId < 0) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.WRONG_BOOK_ID);
+        }
         cartRepository.addItemToCart(userIdentifier, bookId);
         cartBackupScheduler.onCartChanged(userIdentifier);
     }
 
     @Transactional
     public void updateItemQuantity(Long userIdentifier, long bookId, int quantity) {
+        if (Objects.isNull(userIdentifier)) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.CART_BAD_REQUEST);
+        } else if (bookId < 0) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.WRONG_BOOK_ID);
+        }
         cartRepository.updateItemQuantity(userIdentifier, bookId, quantity);
         cartBackupScheduler.onCartChanged(userIdentifier);
     }
 
     @Transactional
     public void removeProductFromCart(Long userIdentifier, long bookId) {
+        if (Objects.isNull(userIdentifier)) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.CART_BAD_REQUEST);
+        } else if (bookId < 0) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.WRONG_BOOK_ID);
+        }
         cartRepository.removeItemFromCart(userIdentifier, bookId);
         cartBackupScheduler.onCartChanged(userIdentifier);
     }
