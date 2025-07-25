@@ -12,6 +12,8 @@ import shop.wannab.order_payment_service.entity.dto.DeliveryPolicyRequest;
 import shop.wannab.order_payment_service.entity.dto.DeliveryPolicyResponse;
 import shop.wannab.order_payment_service.exception.DeliveryPolicyAlreadyExistsException;
 import shop.wannab.order_payment_service.exception.DeliveryPolicyNotFoundException;
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.DeliveryPolicyRepository;
 import shop.wannab.order_payment_service.service.DeliveryPolicyService;
 
@@ -96,6 +98,6 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
     //기본 배송비정책 로직
     @Override
     public DeliveryPolicy getDefaultPolicy() {
-        return deliveryPolicyRepository.findByName("기본배송비").orElseThrow(()-> new IllegalArgumentException("배송비 기본정책이 설정되어있지 않습니다."));
+        return deliveryPolicyRepository.findByName("기본배송비").orElseThrow(()-> new OrderPaymentServiceException(OrderPaymentErrorCode.NO_DEFAULT_DELIVERY_POLICY));
     }
 }

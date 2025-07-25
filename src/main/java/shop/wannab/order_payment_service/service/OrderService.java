@@ -18,6 +18,8 @@ import shop.wannab.order_payment_service.client.UserClient;
 import shop.wannab.order_payment_service.entity.*;
 import shop.wannab.order_payment_service.entity.dto.*;
 
+import shop.wannab.order_payment_service.exception.OrderPaymentErrorCode;
+import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.*;
 import shop.wannab.order_payment_service.service.Impl.OrderEmailHelper;
 
@@ -220,6 +222,9 @@ public class OrderService {
     }
 
     private int getTotalDiscountAmount(Long userId, OrderSubmitDto dto, BookIdTitlePriceListDto bookIdTitlePriceListDto, int totalBookPrice) {
+        if (userId == null) {
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.USER_NOT_FOUND);
+        }
         int totalDiscountAmount = 0;
         List<BookOrderSubmitDto> bookOrderSubmitDtos = dto.getBookOrderSubmitDtos();
         //책에 적용한 쿠폰의 할인정보 받아오는 로직//
@@ -371,11 +376,11 @@ public class OrderService {
     //주문상세조회 (회원)
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrder(Long orderId, Long userId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문정보없음"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         // 본인만 조회할수있도록
         if (!userId.equals(order.getUserId())) {
-            throw new IllegalArgumentException("본인 주문만 반품가능");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.YOU_CAN_ONLY_ACCESS_YOUR_ORDER);
         }
 
         return orderDetailResponse(order);
@@ -385,13 +390,13 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderForGuest(Long orderId, String password) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         Guest guest = guestRepository.findByOrder_Id(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("비회원 주문자 정보가 없습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         if (!guest.getPassword().equals(password)) {
-            throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO);
         }
 
         return orderDetailResponse(order);
@@ -401,16 +406,16 @@ public class OrderService {
     @Transactional
     public void cancelOrder(Long orderId, Long userId){
 
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         // 본인만 취소할수있도록 검사
         if (!userId.equals(order.getUserId())) {
-            throw new IllegalArgumentException("본인 주문만 취소가능");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.YOU_CAN_ONLY_ACCESS_YOUR_ORDER);
         }
 
         // PAID(대기)에서만 취소가능
         if (order.getOrderStatus() != OrderStatus.PAID) {
-            throw new IllegalStateException("현재 주문 상태에서는 취소할 수 없습니다: " + order.getOrderStatus());
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.ONLY_CAN_CANCEL_WHEN_ORDER_PAID);
         }
 
         userClient.cancleOrderPointProcess(order.getId());
@@ -429,18 +434,18 @@ public class OrderService {
     @Transactional
     public void cancelGuestOrder(Long orderId, String password){
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         Guest guest = guestRepository.findByOrder_Id(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("비회원 주문자 정보가 없습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         if (!guest.getPassword().equals(password)) {
-            throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO);
         }
 
         // PAID(대기)에서만 취소가능
         if (order.getOrderStatus() != OrderStatus.PAID) {
-            throw new IllegalStateException("현재 주문 상태에서는 취소할 수 없습니다: " + order.getOrderStatus());
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.ONLY_CAN_CANCEL_WHEN_ORDER_PAID);
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
         increaseBookStock(order);
@@ -467,7 +472,7 @@ public class OrderService {
     //주문상태변경 (관리자)
     @Transactional
     public void updateStatus(Long userId, Long orderId, OrderStatus newStatus){
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("주문번호를 찾을수 없음"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
 //        // ADMIN 확인
 //        String role = userClient.getUserRole(userId);
@@ -490,16 +495,16 @@ public class OrderService {
     @Transactional
     public void refundOrder(Long userId, Long orderId, RefundReason reason){
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다"));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         // 본인만 반품할수있도록 검사
         if (!userId.equals(order.getUserId())) {
-            throw new IllegalArgumentException("본인 주문만 반품가능");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.YOU_CAN_ONLY_ACCESS_YOUR_ORDER);
         }
 
         // 반품 가능 상태 확인 (예: 배송완료 상태만 반품 허용)
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
-            throw new IllegalStateException("현재 상태에서는 반품할 수 없습니다.");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.ONLY_CAN_REFUND_WHEN_ORDER_COMPLETED);
         }
 
 
@@ -508,12 +513,12 @@ public class OrderService {
 
         if (reason.equals(RefundReason.DAMAGED)) {
             if (deliveryAt == null || deliveryAt.plusDays(30).isBefore(LocalDateTime.now())) {
-                throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
+                throw new OrderPaymentServiceException(OrderPaymentErrorCode.DAMAGED_ITEM_REFUND_RESTRICTION);
             }
             refundPoint = order.getTotalPrice() + order.getTotalDiscountAmount(); //제품불량은 전부 환불
         } else if (reason.equals(RefundReason.JUST)) {
             if(deliveryAt == null || deliveryAt.plusDays(10).isBefore(LocalDateTime.now())) {
-                throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
+                throw new OrderPaymentServiceException(OrderPaymentErrorCode.UNUSED_ITEM_REFUND_RESTRICTION);
             }
             refundPoint = order.getTotalBookPrice() + order.getTotalDiscountAmount(); //배송비 제외 환불
 
@@ -533,31 +538,32 @@ public class OrderService {
     @Transactional
     public void refundGuestOrder(Long orderId, String password, RefundReason reason){
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         Guest guest = guestRepository.findByOrder_Id(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("비회원 주문자 정보가 없습니다."));
+                .orElseThrow(() -> new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO));
 
         if (!guest.getPassword().equals(password)) {
-            throw new IllegalArgumentException("주문번호 또는 비밀번호가 일치하지 않습니다.");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.NOT_FOUND_ORDER_INFO);
         }
 
         int refundMoney = 0;
 
         // 반품 가능 상태 확인 (예: 배송완료 상태만 반품 허용)
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
-            throw new IllegalStateException("현재 상태에서는 반품할 수 없습니다.");
+            throw new OrderPaymentServiceException(OrderPaymentErrorCode.ONLY_CAN_REFUND_WHEN_ORDER_COMPLETED);
         }
         LocalDateTime shippedAt = order.getShippedAt(); //출고일
 
         if(reason.equals(RefundReason.DAMAGED)){
             if (shippedAt == null || shippedAt.plusDays(30).isBefore(LocalDateTime.now())) {
-                throw new IllegalStateException("제품불량은 출고일로부터 30일 이내만 반품이 가능합니다.");
+                throw new OrderPaymentServiceException(OrderPaymentErrorCode.DAMAGED_ITEM_REFUND_RESTRICTION);
             }
             refundMoney = order.getTotalPrice(); //제품불량은 전부 환불
-        }else if(reason.equals(RefundReason.JUST)){
+
+        }else if (reason.equals(RefundReason.JUST)){
             if(shippedAt == null || shippedAt.plusDays(10).isBefore(LocalDateTime.now())) {
-                throw new IllegalStateException("미사용 제품은 출고일로부터 10일 이내만 반품이 가능합니다.");
+                throw new OrderPaymentServiceException(OrderPaymentErrorCode.UNUSED_ITEM_REFUND_RESTRICTION);
             }
             refundMoney = order.getTotalBookPrice(); //단순변심은 배송비제외
         }
