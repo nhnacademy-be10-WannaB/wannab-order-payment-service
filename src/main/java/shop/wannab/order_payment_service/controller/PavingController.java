@@ -3,6 +3,7 @@ package shop.wannab.order_payment_service.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +18,7 @@ import shop.wannab.order_payment_service.entity.dto.PavingRequest;
 import shop.wannab.order_payment_service.entity.dto.PavingResponse;
 import shop.wannab.order_payment_service.service.PavingService;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/paving")
@@ -33,6 +35,8 @@ public class PavingController {
         Paving paving =  pavingService.createPaving(request);
 
         PavingResponse response = new PavingResponse(paving.getId(), paving.getName(), paving.getPrice());
+
+        log.info("action=createPaving, name={}, price={}, message=\"포장 생성 요청 완료\"", request.getName(), request.getPrice());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
     }
@@ -47,6 +51,7 @@ public class PavingController {
         Paving paving = pavingService.updatePaving(id, request);
 
         PavingResponse response = new PavingResponse(paving.getId(), paving.getName(), paving.getPrice());
+        log.info("action=updatePaving, id={}, name={}, price={}, message=\"포장 수정 요청 완료\"", id, request.getName(), request.getPrice());
         return ResponseEntity.ok(response);
     }
 
@@ -57,6 +62,7 @@ public class PavingController {
     public ResponseEntity<Void> deletePaving(@PathVariable("paving-id") Long id){
 
         pavingService.deletePaving(id);
+        log.info("action=deletePaving, id={}, message=\"포장 삭제 요청 완료\"", id);
         return ResponseEntity.ok().build();
     }
 
@@ -66,6 +72,7 @@ public class PavingController {
     @GetMapping
     public ResponseEntity<List<PavingResponse>> getPavingList(){
         List<PavingResponse> list = pavingService.getPavingList();
+        log.info("action=getPavingList, message=\"포장 목록 조회 요청 완료\"");
         return ResponseEntity.ok(list);
     }
 

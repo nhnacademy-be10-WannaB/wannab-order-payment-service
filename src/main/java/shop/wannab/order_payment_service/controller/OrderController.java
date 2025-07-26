@@ -45,6 +45,7 @@ public class OrderController {
         } else if (Objects.isNull(userId) && Objects.nonNull(guestId)) {
             orderService.saveTemporaryOrderInfo(guestId, orderItemListDto);
         }
+        log.info("action=produceOrderPageDto, userId={}, guestId={}, message=\"주문 페이지 정보 생성 요청 완료\"", userId, guestId);
     }
 
     @PostMapping("/orders")
@@ -63,20 +64,28 @@ public class OrderController {
             log.debug("FeignException : {}", e.getMessage());
             throw e;
         }
+        OrderPageRequestDto result;
         if (Objects.nonNull(userId)) {
-            return orderService.createOrderPageRequestDto(userId, orderItemListDto);
+            result = orderService.createOrderPageRequestDto(userId, orderItemListDto);
+        } else {
+            result = orderService.createOrderPageRequestDto(guestId, orderItemListDto);
         }
-        return orderService.createOrderPageRequestDto(guestId, orderItemListDto);
+        log.info("action=consumeOrderPageDto, userId={}, guestId={}, message=\"주문 페이지 정보 소비 요청 완료\"", userId, guestId);
+        return result;
 
     }
 
 
     @PostMapping(path = "/orders/new")
     OrderInfoForPayment processOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId, @RequestParam(required = false) Long guestId, @RequestBody @Valid OrderSubmitDto orderSubmitDto) {
+        OrderInfoForPayment result;
         if (Objects.nonNull(userId)) {
-            return orderService.createOrder(orderSubmitDto, userId);
+            result = orderService.createOrder(orderSubmitDto, userId);
+        } else {
+            result = orderService.createOrder(orderSubmitDto, guestId);
         }
-        return orderService.createOrder(orderSubmitDto, guestId);
+        log.info("action=processOrder, userId={}, guestId={}, message=\"주문 처리 요청 완료\"", userId, guestId);
+        return result;
     }
 
 
@@ -85,8 +94,8 @@ public class OrderController {
     public ResponseEntity<Page<OrderLookupResponse>> getOrdersByUser(@RequestHeader("X-USER-ID") Long userId,
                                                                      @RequestParam(defaultValue = "0") int page,
                                                                      @RequestParam(defaultValue = "10") int size){
-
         Page<OrderLookupResponse> orders = orderService.getOrdersByUser(userId, page, size);
+        log.info("action=getOrdersByUser, userId={}, page={}, size={}, message=\"사용자 주문 목록 조회 완료\"", userId, page, size);
         return ResponseEntity.ok(orders);
     }
 
@@ -97,6 +106,7 @@ public class OrderController {
                                                                   @RequestParam(defaultValue = "0") int page,
                                                                   @RequestParam(defaultValue = "20") int size) {
         Page<OrderLookupResponse> orders = orderService.getOrders(orderSearchDto, page, size);
+        log.info("action=getAllOrders, userId={}, page={}, size={}, message=\"관리자 주문 전체 조회 완료\"", userId, page, size);
         return ResponseEntity.ok(orders);
     }
 
@@ -105,14 +115,16 @@ public class OrderController {
     public ResponseEntity<OrderDetailResponse> getOrderDetail(@RequestHeader("X-USER-ID") Long userId,
                                                               @PathVariable Long orderId){
         OrderDetailResponse detail = orderService.getOrder(orderId, userId);
+        log.info("action=getOrderDetail, userId={}, orderId={}, message=\"회원 주문 상세 조회 완료\"", userId, orderId);
         return ResponseEntity.ok(detail);
     }
 
     //주문상세조회(비회원)
     @PostMapping("/orders/guest")
     public ResponseEntity<OrderDetailResponse> getGuestOrderDetail(@RequestBody @Valid GuestOrderRequest request){
-
-        return ResponseEntity.ok(orderService.getOrderForGuest(request.getOrderId(), request.getPassword()));
+        OrderDetailResponse orderForGuest = orderService.getOrderForGuest(request.getOrderId(), request.getPassword());
+        log.info("action=getGuestOrderDetail, orderId={}, message=\"비회원 주문 상세 조회 완료\"", request.getOrderId());
+        return ResponseEntity.ok(orderForGuest);
     }
 
     //주문취소(결제취소) 회원
@@ -120,6 +132,7 @@ public class OrderController {
     public ResponseEntity<Void> cancelOrder(@RequestHeader("X-USER-ID") Long userId,
                                             @PathVariable Long orderId){
         orderService.cancelOrder(orderId, userId);
+        log.info("action=cancelOrder, userId={}, orderId={}, message=\"회원 주문 취소 요청 완료\"", userId, orderId);
         return ResponseEntity.ok().build();
     }
 
@@ -127,6 +140,7 @@ public class OrderController {
     @PostMapping("/orders/guest/cancel")
     public ResponseEntity<Void> cancelGuestOrder(@RequestBody @Valid GuestOrderRequest request){
         orderService.cancelGuestOrder(request.getOrderId(), request.getPassword());
+        log.info("action=cancelGuestOrder, orderId={}, message=\"비회원 주문 취소 요청 완료\"", request.getOrderId());
         return ResponseEntity.ok().build();
     }
 
@@ -136,6 +150,7 @@ public class OrderController {
                                              @PathVariable Long orderId,
                                              @RequestParam OrderStatus newStatus){
         orderService.updateStatus(userId, orderId, newStatus);
+        log.info("action=updateStatus, userId={}, orderId={}, newStatus={}, message=\"관리자 주문 상태 변경 완료\"", userId, orderId, newStatus);
         return ResponseEntity.ok().build();
     }
 
@@ -145,6 +160,7 @@ public class OrderController {
                                             @PathVariable Long orderId,
                                             @RequestParam RefundReason reason){   //reason은 스크롤로 (제품불량, 단순변심)
         orderService.refundOrder(userId, orderId, reason);
+        log.info("action=refundOrder, userId={}, orderId={}, reason={}, message=\"회원 반품 요청 완료\"", userId, orderId, reason);
         return ResponseEntity.ok().build();
     }
 
@@ -153,6 +169,7 @@ public class OrderController {
     public ResponseEntity<Void> refundGuestOrder(@RequestBody @Valid GuestOrderRequest request,
                                                  @RequestParam RefundReason reason){
         orderService.refundGuestOrder(request.getOrderId(), request.getPassword(), reason);
+        log.info("action=refundGuestOrder, orderId={}, reason={}, message=\"비회원 반품 요청 완료\"", request.getOrderId(), reason);
         return ResponseEntity.ok().build();
     }
 
@@ -160,7 +177,9 @@ public class OrderController {
     //리뷰가능여부확인
     @GetMapping("/orders/review-check")
     public boolean isReviewable(@RequestParam Long obId) {
-        return orderService.isReviewable(obId);
+        boolean reviewable = orderService.isReviewable(obId);
+        log.info("action=isReviewable, obId={}, reviewable={}, message=\"리뷰 가능 여부 확인 완료\"", obId, reviewable);
+        return reviewable;
     }
 
 }

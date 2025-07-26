@@ -3,6 +3,7 @@ package shop.wannab.order_payment_service.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +19,7 @@ import shop.wannab.order_payment_service.entity.dto.DeliveryPolicyRequest;
 import shop.wannab.order_payment_service.entity.dto.DeliveryPolicyResponse;
 import shop.wannab.order_payment_service.service.DeliveryPolicyService;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/delivery-policy")
@@ -34,6 +36,7 @@ public class DeliveryPolicyController {
 
         //반환하기위해 response에 담음
         DeliveryPolicyResponse response = new DeliveryPolicyResponse(dp.getId(), dp.getName(), dp.getMinPrice(), dp.getFee());
+        log.info("action=createDeliveryPolicy, name={}, minPrice={}, fee={}, message=\"배송 정책 생성 요청 완료\"", request.getName(), request.getMinPrice(), request.getFee());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -45,6 +48,7 @@ public class DeliveryPolicyController {
 
         //반환하기위해 response에 담음
         DeliveryPolicyResponse response = new DeliveryPolicyResponse(dp.getId(), dp.getName(), dp.getMinPrice(), dp.getFee());
+        log.info("action=updateDeliveryPolicy, id={}, name={}, minPrice={}, fee={}, message=\"배송 정책 수정 요청 완료\"", id, request.getName(), request.getMinPrice(), request.getFee());
         return ResponseEntity.ok(response);
     }
 
@@ -53,6 +57,7 @@ public class DeliveryPolicyController {
     public ResponseEntity<Void> deleteDeliverPolicy(@PathVariable("dp-id") Long id){
 
         deliveryPolicyService.deleteDeliveryPolicy(id);
+        log.info("action=deleteDeliverPolicy, id={}, message=\"배송 정책 삭제 요청 완료\"", id);
         return ResponseEntity.ok().build();
     }
 
@@ -60,6 +65,7 @@ public class DeliveryPolicyController {
     @GetMapping
     public ResponseEntity<List<DeliveryPolicyResponse>> getDeliveryPolicyList(){
         List<DeliveryPolicyResponse> list = deliveryPolicyService.getDeliveryPolicyList();
+        log.info("action=getDeliveryPolicyList, message=\"배송 정책 목록 조회 요청 완료\"");
         return ResponseEntity.ok(list);
     }
 }
