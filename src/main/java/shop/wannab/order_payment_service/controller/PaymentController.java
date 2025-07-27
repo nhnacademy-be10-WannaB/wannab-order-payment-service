@@ -9,10 +9,10 @@ import shop.wannab.order_payment_service.entity.payment.dto.TossConfirmRequestDt
 import shop.wannab.order_payment_service.entity.payment.strategy.PaymentStrategy;
 import shop.wannab.order_payment_service.entity.payment.strategy.PaymentStrategyFactory;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
-@Slf4j
 public class PaymentController {
 
     private final PaymentStrategyFactory paymentStrategyFactory;
@@ -24,7 +24,7 @@ public class PaymentController {
         log.debug("confirmAndProcessPayment for {} with requestDto: {}", provider, requestDto);
         PaymentStrategy paymentStrategy = paymentStrategyFactory.getStrategy(provider);
         FinalOrderResultDto result = paymentStrategy.confirmAndProcessPayment(requestDto);
-        log.debug("결제 승인 완료 : {}", result.getPaymentKey());
+        log.info("action=confirmAndProcessPayment, provider={}, paymentKey={}, message=\"결제 승인 및 처리 요청 완료\"", provider, result.getPaymentKey());
         return ResponseEntity.ok(result);
     }
 }

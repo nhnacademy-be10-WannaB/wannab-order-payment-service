@@ -8,8 +8,20 @@
 
     <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${APP_NAME}.log</file>
-        <encoder>
-            <pattern>${FILE_LOG_PATTERN}</pattern>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <logLevel/>
+                <threadName/>
+                <loggerName/>
+                <pattern>
+                    <pattern>
+                        {"message":"%msg"}
+                    </pattern>
+                </pattern>
+                <mdc/>
+                <stackTrace/>
+            </providers>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${APP_NAME}-%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -27,9 +39,11 @@
         </root>
     </springProfile>
 
-    <springProfile name="!v1,v2">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
+    <springProfile name="!v1">
+        <springProfile name="!v2">
+            <root level="INFO">
+                <appender-ref ref="CONSOLE"/>
+            </root>
+        </springProfile>
     </springProfile>
 </configuration>

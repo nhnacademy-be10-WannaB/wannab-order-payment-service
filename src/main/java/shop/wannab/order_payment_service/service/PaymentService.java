@@ -57,8 +57,8 @@ public class PaymentService {
 
     @Transactional
     public FinalOrderResultDto confirmAndProcessTossPayment(TossConfirmRequestDto requestDto) {
-        log.debug("confirmAndProcessPayment Hi");
-        log.debug("anybody there : {}, {}", tossPaymentsProperties.getSecretKey(), tossPaymentsProperties.getPrefix());
+        log.info("action=confirmAndProcessTossPayment,orderId = {},paymentKey={},amount={}, message=\"결제 승인 로직 시작\"",requestDto.getOrderId(),requestDto.getPaymentKey(),requestDto.getAmount());
+
         String encodedAuth = Base64.getEncoder().encodeToString((tossPaymentsProperties.getSecretKey() + ":").getBytes(StandardCharsets.UTF_8));
         String authHeader = "Basic " + encodedAuth;
 
@@ -141,7 +141,7 @@ public class PaymentService {
 
             itemTempRedisRepository.deleteOrderItems(order.getUserId());
             log.debug("재고 감소 orderId : {}",orderId);
-            log.debug("confirmAndProcessPayment Bye");
+            log.info("action=confirmAndProcessTossPayment,orderId = {},paymentKey={},amount={}, message=\"결제 승인 로직 완료\"",requestDto.getOrderId(),requestDto.getPaymentKey(),requestDto.getAmount());
             return new FinalOrderResultDto(
                     tossResponse.getPaymentKey(),
                     tossResponse.getOrderId(),
@@ -173,6 +173,7 @@ public class PaymentService {
 
     @Transactional
     public void paymentCancel(Long orderId, Integer cancelAmount) {
+        log.info("action=paymentCancel,orderId = {},cancelAmount = {}, message=\"결제 취소 로직 시작\"",orderId,cancelAmount);
         Payment payment = paymentRepository.findByOrder_Id(orderId)
                 .orElseThrow(() -> new IllegalStateException("결제 내역이 존재하지 않습니다."));
 
@@ -183,6 +184,7 @@ public class PaymentService {
                 cancelAmount,
                 LocalDateTime.now()
         );
+        log.info("action=paymentCancel,orderId = {},cancelAmount = {}, message=\"결제 취소 로직 완료\"",orderId,cancelAmount);
 
         cancelRepository.save(cancel);
     }

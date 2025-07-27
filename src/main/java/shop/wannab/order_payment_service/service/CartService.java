@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.client.BookClient;
@@ -19,6 +20,7 @@ import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.CartRepository;
 import shop.wannab.order_payment_service.scheduler.CartBackupScheduler;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CartService {
