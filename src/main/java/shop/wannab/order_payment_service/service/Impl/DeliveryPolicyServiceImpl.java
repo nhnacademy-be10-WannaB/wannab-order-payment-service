@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shop.wannab.order_payment_service.entity.DeliveryPolicy;
@@ -17,6 +18,7 @@ import shop.wannab.order_payment_service.exception.OrderPaymentServiceException;
 import shop.wannab.order_payment_service.repository.DeliveryPolicyRepository;
 import shop.wannab.order_payment_service.service.DeliveryPolicyService;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
@@ -27,6 +29,8 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
     @Transactional
     @Override
     public DeliveryPolicy createDeliveryPolicy(DeliveryPolicyRequest request) {
+        log.info("action=createDeliveryPolicy,name={},minPrice={},fee={}, message=\"배송비 정책 생성 로직 시작\""
+        ,request.getName(),request.getMinPrice(),request.getFee());
 
         // 이름 중복검사
         if(deliveryPolicyRepository.existsByName(request.getName())){
@@ -37,7 +41,8 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
         deliveryPolicy.setName(request.getName());
         deliveryPolicy.setFee(request.getFee());
         deliveryPolicy.setMinPrice(request.getMinPrice());
-
+        log.info("action=createDeliveryPolicy,name={},minPrice={},fee={}, message=\"배송비 정책 생성 로직 완료\""
+                ,request.getName(),request.getMinPrice(),request.getFee());
         return deliveryPolicyRepository.save(deliveryPolicy);
     }
 
@@ -45,7 +50,8 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
     @Transactional
     @Override
     public DeliveryPolicy updateDeliveryPolicy(Long id, DeliveryPolicyRequest request) {
-
+        log.info("action=createDeliveryPolicy,dp-id={},name={},minPrice={},fee={}, message=\"배송비 정책 수정 로직 시작\""
+                ,id,request.getName(),request.getMinPrice(),request.getFee());
         //정책 유무 검사
         DeliveryPolicy deliveryPolicy = deliveryPolicyRepository.findById(id).orElseThrow(()-> new DeliveryPolicyNotFoundException(id));
 
@@ -59,7 +65,8 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
         deliveryPolicy.setName(request.getName());
         deliveryPolicy.setFee(request.getFee());
         deliveryPolicy.setMinPrice(request.getMinPrice());
-
+        log.info("action=createDeliveryPolicy,dp-id={},name={},minPrice={},fee={}, message=\"배송비 정책 수정 로직 시작\""
+                ,id,request.getName(),request.getMinPrice(),request.getFee());
         return deliveryPolicy;
     }
 
@@ -71,13 +78,15 @@ public class DeliveryPolicyServiceImpl implements DeliveryPolicyService {
         DeliveryPolicy deliveryPolicy = deliveryPolicyRepository.findById(id).orElseThrow(()-> new DeliveryPolicyNotFoundException(id));
 
         deliveryPolicyRepository.deleteById(id);
+        log.info("action=createDeliveryPolicy,dp-id={}, message=\"배송비 정책 삭제 로직 완료\""
+                ,id);
     }
 
     //전체목록조회
     @Transactional(readOnly = true)
     @Override
     public List<DeliveryPolicyResponse> getDeliveryPolicyList() {
-
+        log.info("action=createDeliveryPolicy, message=\"배송비 정책 조회 로직 완료\"");
         //DTO로 변환하기위해 매핑처리
         return deliveryPolicyRepository.findAll().stream()
                 .map(dp -> new DeliveryPolicyResponse(dp.getId(), dp.getName(), dp.getMinPrice(), dp.getFee()))
