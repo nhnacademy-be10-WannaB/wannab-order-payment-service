@@ -1,17 +1,18 @@
 package shop.wannab.order_payment_service.scheduler;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import shop.wannab.order_payment_service.entity.Order;
-import shop.wannab.order_payment_service.entity.OrderStatus;
-import shop.wannab.order_payment_service.repository.OrderRepository;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import shop.wannab.order_payment_service.entity.Order;
+import shop.wannab.order_payment_service.entity.OrderStatus;
+import shop.wannab.order_payment_service.repository.OrderRepository;
 
 class OrderStatusSchedulerTest {
 
@@ -59,7 +60,7 @@ class OrderStatusSchedulerTest {
 
         scheduler.updateOrdersToShipping();
 
-        assert order.getOrderStatus() == OrderStatus.PAID;
+        assert order.getOrderStatus() == OrderStatus.SHIPPING;
         assert order.getShippedAt() != null;
     }
 
