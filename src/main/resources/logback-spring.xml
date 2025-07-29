@@ -2,6 +2,8 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="UNKNOWN_SERVICE"/>
+
     <property name="LOG_PATH" value="/app/logs"/>
     <property name="APP_NAME" value="order-payment-service"/>
     <property name="VERSION" value="${spring.profiles.active:-unknown}"/>
@@ -29,6 +31,11 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="WEBHOOK" class="shop.wannab.order_payment_service.advice.alert.WebhookAppender">
+        <webhookUrl>https://nhnacademy.dooray.com/services/3204376758577275363/4094430404194879315/qtRDdsQ5TWuqQrXgavQE5g</webhookUrl>
+        <minLevel>ERROR</minLevel>
+    </appender>
+
     <logger name="shop.wannab.order_payment_service" level="DEBUG">
         <appender-ref ref="CONSOLE"/>
     </logger>
@@ -36,6 +43,7 @@
     <springProfile name="v1,v2">
         <root level="DEBUG">
             <appender-ref ref="ROLLING_FILE"/>
+            <appender-ref ref="WEBHOOK"/>
         </root>
     </springProfile>
 
